@@ -28,7 +28,8 @@ class Car:
 
 class Street:
 
-    def __init__(self, length):
+    def __init__(self, id, length):
+        self.id = id
         self.length = length
 
 

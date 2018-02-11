@@ -5,6 +5,7 @@ Hier haste deinen Docstring
 from enum import Enum
 import math
 from elements.elements import *
+import logging
 
 class Verkehr:
 
@@ -13,6 +14,9 @@ class Verkehr:
         self.streets = []
         self.nodes = []
         self.iterator = 0
+        self.steps = 0
+        self.cost = 0
+        self.logger = logging.getLogger(__name__)
 
     def move(self, car):
         distance_left = car.distance_left - car.speed
@@ -39,6 +43,8 @@ class Verkehr:
             car.next_node = next_node
             car.street = next_street
             distance_left = next_street.length
+
+            self.logger.info('car %s goes to street %s', car.id, car.street.id)
             
         else:
             for front in self.cars:
@@ -66,6 +72,7 @@ class Verkehr:
         self._init_cars()
 
     def step(self, lights=[0, 0, 0, 0, 0, 0, 0]):
+        self.steps += 1
         self.cars.sort(key=lambda x: x.distance_left)
 
         if len(lights) != len(self.nodes):
@@ -74,16 +81,13 @@ class Verkehr:
         for ii in range(7):
             self.nodes[ii].green_for = lights[ii]
 
-        cost = 0
         for car in self.cars:
-            cost += self.move(car)
+            self.cost += self.move(car)
 
-        self.cars.sort(key=lambda x: x.id)
-        for car in self.cars:
-            print("Car", car)
-        print("Step -----------------")
-
-        return cost
+        if self.logger.isEnabledFor(logging.DEBUG):
+            for car in self.cars:
+                self.logger.debug(car)
+        self.logger.info('step %s, cost %s', self.steps, self.cost)
 
     def _init_cars(self):
         self.cars = []
@@ -98,17 +102,17 @@ class Verkehr:
 
     def _init_streets(self):
         self.streets = []
-        self.streets.append(Street(101))
-        self.streets.append(Street(150))
-        self.streets.append(Street(50))
-        self.streets.append(Street(50))
-        self.streets.append(Street(50))
-        self.streets.append(Street(50))
-        self.streets.append(Street(102))
-        self.streets.append(Street(50))
-        self.streets.append(Street(50))
-        self.streets.append(Street(50))
-        self.streets.append(Street(103))
+        self.streets.append(Street(1, 100))
+        self.streets.append(Street(2, 150))
+        self.streets.append(Street(3, 50))
+        self.streets.append(Street(4, 50))
+        self.streets.append(Street(5, 50))
+        self.streets.append(Street(6, 50))
+        self.streets.append(Street(7, 100))
+        self.streets.append(Street(8, 50))
+        self.streets.append(Street(9, 50))
+        self.streets.append(Street(10, 50))
+        self.streets.append(Street(11, 100))
 
     def _init_nodes(self):
         self.nodes = []

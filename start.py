@@ -1,4 +1,7 @@
 import env.verkehr
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 v = env.verkehr.Verkehr()
 v.setup()
