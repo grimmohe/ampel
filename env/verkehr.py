@@ -87,9 +87,8 @@ class Verkehr:
 
     def _init_cars(self):
         self.cars = []
-        self.cars.append(Car(0, 13.8))
-        self.cars.append(Car(1, 14.0))
-        self.cars.append(Car(2, 14.4))
+        for i in range(50):
+            self.cars.append(Car(i, 10 + (i % 50) / 10))
 
         for car in self.cars:
             self.iterator += 1
