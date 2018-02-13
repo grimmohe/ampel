@@ -1,9 +1,9 @@
-import env.verkehr
+from env import verkehr
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
-v = env.verkehr.Verkehr()
+v = verkehr.Verkehr()
 v.setup()
 
 for i in range(100):
