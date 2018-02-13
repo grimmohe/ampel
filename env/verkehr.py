@@ -95,6 +95,9 @@ class Verkehr:
 
         return self.sensor_out
 
+    def get_cost(self):
+        return self.cost
+
     def _init_cars(self):
         self.cars = []
         for i in range(50):

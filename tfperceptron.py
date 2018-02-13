@@ -119,26 +119,3 @@ class Perceptron(object):
         return str(self.fitness)
 
 
-    
-        
-   
-    
-if __name__ == '__main__':
-    s1 = time.time()
-    sess = tf.Session()
-    p = Perceptron(3,4,1)
-    
-    print p.activate([[0.3,0.6,0.1]])
-    print p.activate([[0.4,0.6,0.1]])
-    print p.activate([[0.5,0.6,0.1]])
-    d = p.get_dict()
-    print len(d['weights'])
-    print len(d['biases'])
-    #sess = tf.Session()
-    p1 = Perceptron(3,4,1)
-    p1.as_dict = copy.deepcopy(d)
-    p1.reload()
-    print p1.activate([[0.3,0.6,0.1]])
-    print p1.activate([[0.4,0.6,0.1]])
-    print p1.activate([[0.5,0.6,0.1]])
-    print time.time()-s1

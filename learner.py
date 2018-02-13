@@ -7,13 +7,13 @@ import random
 import tensorflow as tf
 from tfperceptron import Perceptron
 import time
+from env import verkehr
 
 
 logger = logging.getLogger('dino.learner')
 class Learner(object):
 
     def __init__(self, genomeUnits, selection, mutationProb):
-        self.gm = gameManip
         self.genomes = []
         self.state = 'STOP'
         self.genome = 0
@@ -30,13 +30,13 @@ class Learner(object):
 
 
     # Build genomes before calling executeGeneration.
-    def startLearning(self, stop_event):
+    def startLearning(self):
 
         # Build genomes if needed
-        self.stop_event = stop_event
         while (len(self.genomes) < self.genomeUnits):
-            self.genomes.append(self.buildGenome(3, 1))
+            self.genomes.append(self.buildGenome(44, 7))
   
+        logger.info('Build genomes done')
         self.executeGeneration()
   
 
@@ -112,8 +112,16 @@ class Learner(object):
         d = dict(enumerate(self.genomes))
         f = []
         s = []
-        selected = OrderedDict(sorted(d.items(), key= lambda t: t[1].fitness, reverse=True)).values()
-        selected = selected[:self.selection]
+        selected = OrderedDict(sorted(d.items(), key= lambda t: t[1].fitness, reverse=False)).values()
+        print(selected)
+        print(self.selection)
+
+        new_selected = []
+        for genome in selected:
+            new_selected.append(genome)
+
+        #selected = selected[:self.selection]
+        selected = new_selected
         tf.reset_default_graph()
         for select in selected:
             fit = select.copy()
@@ -153,17 +161,26 @@ class Learner(object):
   
         #Start the game with current genome network
 
-        v = env.verkehr.Verkehr()
+        v = verkehr.Verkehr()
         v.setup()
+        i=0
         netOutput = [i%2, i%3%2, i%4%2, i%5%2, i%6%2, i%7%2, i%8%2]
-
+        totalCost = 0
         for i in range(100):
             gameOutput = v.step(lights=netOutput)
-            netOutput = self.genome.activate([[self.sensors[0].value,self.sensors[0].size,self.sensors[0].speed]])[0][0]
-        
+            netOutput = genome.activate([gameOutput])[0]
+    
+            new_out = []
+            for i in range(len(netOutput)):
+                if (netOutput[i] < 0.5):
+                    new_out.append(0)
+                else:
+                    new_out.append(1)
 
-        
+            netOutput = new_out
+            totalCost += v.get_cost()
 
+        genome.set_fitness(totalCost)
 
     # Validate if any acction occur uppon a given input (in this case, distance).
     # genome only keeps a single activation value for any given input,
@@ -211,6 +228,7 @@ class Learner(object):
         #Intialize one genome network with one layer perceptron
         network = Perceptron(inputs, 4,outputs)
 
+        logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network;
 
 
@@ -276,20 +294,3 @@ class Learner(object):
                 continue
             a[key][k] += a[key][k] * (random.random() - 0.5) * 1.5 + (random.random() - 0.5)
 
-
-if __name__ == "__main__":
-    learner = Learner(12, 4, 0.2)
-
-    #p = Perceptron(3,4,1)
-    j =0
-    for i in range (0,100):
-        tf.reset_default_graph()
-        #sess = tf.Session()
-        p = Perceptron(3,4,1)
-        exp = learner.checkExperience(p)
-        print exp
-        if exp:
-            j+=1
-    print j
-
-  
