@@ -117,8 +117,12 @@ class Learner(object):
         print(self.selection)
 
         new_selected = []
+        count = 0
         for genome in selected:
             new_selected.append(genome)
+            count += 1 
+            if(count >= self.selection):
+                break
 
         #selected = selected[:self.selection]
         selected = new_selected
