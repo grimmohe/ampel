@@ -4,8 +4,8 @@ Hier haste deinen Docstring
 
 from enum import Enum
 import math
-from elements.elements import *
 import logging
+from .structs import *
 
 class Verkehr:
 
@@ -16,12 +16,14 @@ class Verkehr:
         self.iterator = 0
         self.steps = 0
         self.cost = 0
+        self.sensor_out = []
         self.logger = logging.getLogger(__name__)
 
     def move(self, car):
         distance_left = car.distance_left - car.speed
         status = CarStatus.FREE
         gap = 10
+        stopped = False
         self.iterator += 1
 
         if car.next_indicator_type == IndicatorType.OUTGOING:
@@ -60,11 +62,12 @@ class Verkehr:
                 else:
                     status = CarStatus.WAITING
                     distance_left = 0
+                    stopped = (car.status != CarStatus.WAITING)
 
         car.distance_left = distance_left
         car.status = status
 
-        return int(status == CarStatus.WAITING)
+        return int(status == CarStatus.WAITING) + int(stopped)
 
     def setup(self):
         self._init_streets()
@@ -73,6 +76,7 @@ class Verkehr:
 
     def step(self, lights=[0, 0, 0, 0, 0, 0, 0]):
         self.steps += 1
+        self.sensor_out = [0] * len(self.streets) * 4
         self.cars.sort(key=lambda x: x.distance_left)
 
         if len(lights) != len(self.nodes):
@@ -88,6 +92,8 @@ class Verkehr:
             for car in self.cars:
                 self.logger.debug(car)
         self.logger.info('step %s, cost %s', self.steps, self.cost)
+
+        return self.sensor_out
 
     def _init_cars(self):
         self.cars = []
