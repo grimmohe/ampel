@@ -17,6 +17,7 @@ class Car:
         self.id = id
         self.speed = speed
         self.next_node = None
+        self.last_node = None
         self.street = None
         self.status = CarStatus.FREE
         self.distance_left = 0
@@ -54,7 +55,8 @@ class Connection:
 
 class Node:
 
-    def __init__(self, size, connection1, connection2):
+    def __init__(self, id, size, connection1, connection2):
+        self.id = id
         self.green_for = 0
         self.connections = []
         self.size = size
