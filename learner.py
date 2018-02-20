@@ -58,7 +58,7 @@ class Learner(object):
 
         while(self.genome< len(self.genomes) and not self.interuptted):
             self.executeGenome()
-            #time.sleep(1)
+
         self.genify()
 
     def genify(self):
@@ -68,16 +68,16 @@ class Learner(object):
 
         # Copy best genomes
         bestGenomes = self.genomes
-        #logger.info('bestGenomes %d'%(len(bestGenomes),))
+
         # Cross Over ()
         while len(self.genomes) < self.genomeUnits - 2:
             # Get two random Genomes
             genA = random.choice(bestGenomes).copy()
             genB = random.choice(bestGenomes).copy()
-            #logger.info('weights' + str(genA.as_dict)+str(genB.as_dict))
             #Cross over and Mutate
             newGenome = self.mutate(self.crossOver(genA, genB))
-            #logger.info('new genome %s'%(str(newGenome.as_dict),))
+            genA = None
+            genB = None
             #Add to generation
             self.genomes.append(newGenome)
     
@@ -129,11 +129,9 @@ class Learner(object):
             
 
         selected = None
+        new_selected = None
         logger.info('Fitness: #### %s' %(str(f),))
         return s
-    
-   
-
 
 
   # Waits the game to end, and start a new one, then:
@@ -161,24 +159,21 @@ class Learner(object):
 
         v = verkehr.Verkehr()
         v.setup()
-        i=0
-        netOutput = [i%2, i%3%2, i%4%2, i%5%2, i%6%2, i%7%2, i%8%2]
-        totalCost = 0
-        for i in range(100):
+        netOutput = [0] * 7
+        for _ in range(100):
             gameOutput = v.step(lights=netOutput)
             netOutput = genome.activate([gameOutput])[0]
     
             new_out = []
-            for i in range(len(netOutput)):
-                if (netOutput[i] < 0.5):
+            for out in netOutput:
+                if (out < 0.5):
                     new_out.append(0)
                 else:
                     new_out.append(1)
 
             netOutput = new_out
-            totalCost += v.get_cost()
 
-        genome.set_fitness(totalCost)
+        genome.set_fitness(v.get_cost())
 
     # Validate if any acction occur uppon a given input (in this case, distance).
     # genome only keeps a single activation value for any given input,
@@ -273,13 +268,6 @@ class Learner(object):
         self.mutateDataKeys(net_dict, 'weights', self.mutationProb)
         net.reload()
         return net
-
-
-
-
-  
-
-
 
     # Given an Array of objects with key `key`,
     # and also a `mutationRate`, randomly Mutate
