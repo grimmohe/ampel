@@ -24,10 +24,6 @@ class Learner(object):
         self.mutationProb = mutationProb
         self.interuptted = False
         
-        #self.sess = tf.Session()
-        #self.saver = tf.train.Saver()
-
-
 
     # Build genomes before calling executeGeneration.
     def startLearning(self):
@@ -92,17 +88,17 @@ class Learner(object):
             gen = random.choice(bestGenomes).copy()
             #logger.info('mutation old genome %s'%(str(gen.as_dict),))
             # Cross over and Mutate
-            newGenome = self.mutate(gen);
+            newGenome = self.mutate(gen)
             #logger.info('mutation new genome %s'%(str(newGenome.as_dict),))
             # Add to generation
-            self.genomes.append(newGenome);
+            self.genomes.append(newGenome)
             #logger.info('mutation old genome after mutation %s'%(str(gen.as_dict),))
     
 
         logger.info('Completed generation %d' %(self.generation,))
 
         #Execute next generation
-        self.executeGeneration();
+        self.executeGeneration()
 
 
 
@@ -113,8 +109,6 @@ class Learner(object):
         f = []
         s = []
         selected = OrderedDict(sorted(d.items(), key= lambda t: t[1].fitness, reverse=False)).values()
-        print(selected)
-        print(self.selection)
 
         new_selected = []
         count = 0
@@ -158,7 +152,7 @@ class Learner(object):
         # Check if genome has AT LEAST some experience
         if (self.shouldCheckExperience): 
             if not self.checkExperience(genome):
-                genome.fitness = 0;
+                genome.fitness = 0
                 logger.info('Genome %d has no min. experience'%(self.genome))
                 return
     
@@ -197,7 +191,7 @@ class Learner(object):
         inputs = [[0.0, 0.8, 0.5]]
         outputs = {}
         for k in np.arange(start,stop,step):
-            inputs[0][0] = k;
+            inputs[0][0] = k
 
             activation = genome.activate(inputs)
             
@@ -217,7 +211,7 @@ class Learner(object):
   
         loaded = 0
         for k in genomes:
-            self.genomes.append(genome)
+            self.genomes.append(genomes)
             loaded +=1
   
 
@@ -233,7 +227,7 @@ class Learner(object):
         network = Perceptron(inputs, 4,outputs)
 
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
-        return network;
+        return network
 
 
 
