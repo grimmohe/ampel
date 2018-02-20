@@ -35,7 +35,9 @@ class Learner(object):
             self.genomes.append(self._buildGenome(660, 7))
   
         logger.info('Build genomes done')
-        self._executeGeneration()
+        
+        while True:
+            self._executeGeneration()
 
     """
     Given the entire generation of genomes (An array),
@@ -94,8 +96,6 @@ class Learner(object):
 
         logger.info('Completed generation %d' %(self.generation,))
 
-        #Execute next generation
-        self._executeGeneration()
 
 
     """
