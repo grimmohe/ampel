@@ -9,7 +9,7 @@ from .structs import *
 
 class Verkehr:
 
-    def __init__(self):
+    def __init__(self, accumulate):
         self.cars = []
         self.streets = []
         self.nodes = []
@@ -17,7 +17,7 @@ class Verkehr:
         self.steps = 0
         self.cost = 0
         self.sensor_out = []
-        self.sensor_out_accu = [[0] * 44] * 10
+        self.accumulate = accumulate
         self.logger = logging.getLogger(__name__)
 
     def move(self, car):
@@ -82,6 +82,7 @@ class Verkehr:
         self._init_streets()
         self._init_nodes()
         self._init_cars()
+        self._init_accu()
 
     def step(self, lights=[0, 0, 0, 0, 0, 0, 0]):
         self.steps += 1
@@ -103,7 +104,7 @@ class Verkehr:
         self.logger.info('step %s, cost %s', self.steps, self.cost)
         self.logger.debug(self.sensor_out)
 
-        self.sensor_out_accu = self.sensor_out_accu[:9]
+        self.sensor_out_accu = self.sensor_out_accu[:self.accumulate-1]
         self.sensor_out_accu.insert(0,self.sensor_out)
 
         return [item for sublist in self.sensor_out_accu for item in sublist]
@@ -152,6 +153,9 @@ class Verkehr:
         self.nodes.append(Node(4, 10, Connection(self.streets[8], self.streets[10]), Connection(self.streets[9])))
         self.nodes.append(Node(5, 10, Connection(self.streets[0], self.streets[1]), Connection(self.streets[2])))
         self.nodes.append(Node(6, 10, Connection(self.streets[6], self.streets[8]), Connection(self.streets[7])))
+
+    def _init_accu(self):
+        self.sensor_out_accu = [[0] * len(self.streets) * 4] * self.accumulate
 
     """
      1, 0, 0, 1, 0, 0, 1, 1 

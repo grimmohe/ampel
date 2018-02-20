@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-v = verkehr.Verkehr()
+v = verkehr.Verkehr(15)
 v.setup()
 
 for i in range(100):

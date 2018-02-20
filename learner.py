@@ -32,7 +32,7 @@ class Learner(object):
 
         # Build genomes if needed
         while (len(self.genomes) < self.genomeUnits):
-            self.genomes.append(self._buildGenome(440, 7))
+            self.genomes.append(self._buildGenome(660, 7))
   
         logger.info('Build genomes done')
         self._executeGeneration()
@@ -132,7 +132,7 @@ class Learner(object):
         self.genome += 1
         logger.info('Executing genome %d' %(self.genome,))
     
-        v = verkehr.Verkehr()
+        v = verkehr.Verkehr(15)
         v.setup()
 
         netOutput = [0] * 7
