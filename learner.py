@@ -103,32 +103,21 @@ class Learner(object):
     untill the genome list has selectN elements.
     """
     def _selectBestGenomes(self):
-        d = dict(enumerate(self.genomes))
-        f = []
-        s = []
-        selected = OrderedDict(sorted(d.items(), key= lambda t: t[1].fitness, reverse=False)).values()
+        self.genomes.sort(key=lambda x: x.fitness)
 
-        new_selected = []
-        count = 0
-        for genome in selected:
-            new_selected.append(genome)
-            count += 1 
-            if(count >= self.selection):
-                break
-
-        #selected = selected[:self.selection]
-        selected = new_selected
+        selected = self.genomes[:self.selection]
         tf.reset_default_graph()
+
+        s = []
+        f = []
         for select in selected:
             fit = select.copy()
             fit.reload()
             s.append(fit)
             f.append(select.fitness)
-            
 
         selected = None
-        new_selected = None
-        logger.info('Fitness: #### %s' %(str(f),))
+        logger.info('Fitness: #### %s', f)
         return s
 
     """
@@ -142,16 +131,10 @@ class Learner(object):
         genome = self.genomes[self.genome]
         self.genome += 1
         logger.info('Executing genome %d' %(self.genome,))
-        
-        # Check if genome has AT LEAST some experience
-        if (self.shouldCheckExperience): 
-            if not self._checkExperience(genome):
-                genome.fitness = 0
-                logger.info('Genome %d has no min. experience'%(self.genome))
-                return
     
         v = verkehr.Verkehr()
         v.setup()
+
         netOutput = [0] * 7
         for _ in range(100):
             gameOutput = v.step(lights=netOutput)
@@ -169,50 +152,13 @@ class Learner(object):
         genome.set_fitness(v.get_cost())
 
     """
-    Validate if any acction occur uppon a given input (in this case, distance).
-    genome only keeps a single activation value for any given input,
-    it will return false
-    """
-    def _checkExperience(self, genome):
-  
-        step, start, stop = (0.7, 0.0, 7)
-
-        #: Inputs are default. We only want to test the first index
-        inputs = [[0.0, 0.8, 0.5]]
-        outputs = {}
-        for k in np.arange(start,stop,step):
-            inputs[0][0] = k
-
-            genome.activate(inputs)
-            
-            state = False
-    
-            outputs.update({state:True})
-
-        return len(outputs.keys()) > 1
-
-    """
-    Load genomes saved from saver
-    """
-    def _loadGenomes(self, genomes, deleteOthers):
-        if deleteOthers:
-            self.genomes = []
-  
-        loaded = 0
-        for k in genomes:
-            self.genomes.append(genomes)
-            loaded +=1
-  
-        logger.info('Loaded %d genomes!' %(loaded,))
-
-    """
     Builds a new genome based on the 
     expected number of inputs and outputs
     """
     def _buildGenome(self, inputs, outputs):
         logger.info('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 4,outputs)
+        network = Perceptron(inputs, 4, outputs)
 
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network
@@ -269,9 +215,8 @@ class Learner(object):
     lower than mutationRate for each element.
     """
     def _mutateDataKeys(self, a, key, mutationRate):
-        for k in range(0,len(a[key])):
+        for k in range(len(a[key])):
         # Should mutate?
             if (random.random() > mutationRate):
                 continue
             a[key][k] += a[key][k] * (random.random() - 0.5) * 1.5 + (random.random() - 0.5)
-
