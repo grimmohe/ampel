@@ -13,69 +13,66 @@ from env import verkehr
 logger = logging.getLogger('dino.learner')
 class Learner(object):
 
-    def __init__(self, genomeUnits, selection, mutationProb):
+    def __init__(self, genomeUnits, selection, mutations, mutationProb):
         self.genomes = []
-        self.state = 'STOP'
         self.genome = 0
         self.generation = 0
         self.shouldCheckExperience = False
         self.genomeUnits = genomeUnits
         self.selection = selection
+        self.mutations = mutations
         self.mutationProb = mutationProb
         self.interuptted = False
         
 
-    # Build genomes before calling executeGeneration.
+    """
+    Build genomes before calling executeGeneration.
+    """
     def startLearning(self):
 
         # Build genomes if needed
         while (len(self.genomes) < self.genomeUnits):
-            self.genomes.append(self.buildGenome(44, 7))
+            self.genomes.append(self._buildGenome(44, 7))
   
         logger.info('Build genomes done')
-        self.executeGeneration()
-  
+        self._executeGeneration()
 
-
-
-# Given the entire generation of genomes (An array),
-# applyes method `executeGenome` for each element.
-# After all elements have completed executing:
-# 
-# 1) Select best genomes
-# 2) Does cross over (except for 2 genomes)
-# 3) Does Mutation-only on remaining genomes
-# 4) Execute generation (recursivelly)
-    def executeGeneration(self):
-        if (self.state == 'STOP'):
-            return
-  
-
+    """
+    Given the entire generation of genomes (An array),
+    applyes method `executeGenome` for each element.
+    After all elements have completed executing:
+     
+    1) Select best genomes
+    2) Does cross over (except for 2 genomes)
+    3) Does Mutation-only on remaining genomes
+    4) Execute generation (recursivelly)
+    """
+    def _executeGeneration(self):
         self.generation += 1
         logger.info('Executing generation %d'%(self.generation,))
 
         self.genome = 0
 
-        while(self.genome< len(self.genomes) and not self.interuptted):
-            self.executeGenome()
+        while(self.genome < len(self.genomes) and not self.interuptted):
+            self._executeGenome()
 
-        self.genify()
+        self._genify()
 
-    def genify(self):
+    def _genify(self):
 
         # Kill worst genomes
-        self.genomes = self.selectBestGenomes()
+        self.genomes = self._selectBestGenomes()
 
         # Copy best genomes
         bestGenomes = self.genomes
 
         # Cross Over ()
-        while len(self.genomes) < self.genomeUnits - 2:
+        while len(self.genomes) < self.genomeUnits - self.mutations:
             # Get two random Genomes
             genA = random.choice(bestGenomes).copy()
             genB = random.choice(bestGenomes).copy()
             #Cross over and Mutate
-            newGenome = self.mutate(self.crossOver(genA, genB))
+            newGenome = self._mutate(self._crossOver(genA, genB))
             genA = None
             genB = None
             #Add to generation
@@ -88,7 +85,7 @@ class Learner(object):
             gen = random.choice(bestGenomes).copy()
             #logger.info('mutation old genome %s'%(str(gen.as_dict),))
             # Cross over and Mutate
-            newGenome = self.mutate(gen)
+            newGenome = self._mutate(gen)
             #logger.info('mutation new genome %s'%(str(newGenome.as_dict),))
             # Add to generation
             self.genomes.append(newGenome)
@@ -98,13 +95,14 @@ class Learner(object):
         logger.info('Completed generation %d' %(self.generation,))
 
         #Execute next generation
-        self.executeGeneration()
+        self._executeGeneration()
 
 
-
-    # Sort all the genomes, and delete the worst one
-    # untill the genome list has selectN elements.
-    def selectBestGenomes(self):
+    """
+    Sort all the genomes, and delete the worst one
+    untill the genome list has selectN elements.
+    """
+    def _selectBestGenomes(self):
         d = dict(enumerate(self.genomes))
         f = []
         s = []
@@ -133,30 +131,25 @@ class Learner(object):
         logger.info('Fitness: #### %s' %(str(f),))
         return s
 
-
-  # Waits the game to end, and start a new one, then:
-  # 1) Set's listener for sensorData
-  # 2) On data read, applyes the neural network, and
-  #    set it's output
-  # 3) When the game has ended and compute the fitness
-    def executeGenome(self):
-        if (self.state == 'STOP'):
-            return
-  
+    """
+    Waits the game to end, and start a new one, then:
+    1) Set's listener for sensorData
+    2) On data read, applyes the neural network, and
+       set it's output
+    3) When the game has ended and compute the fitness
+    """
+    def _executeGenome(self):
         genome = self.genomes[self.genome]
         self.genome += 1
         logger.info('Executing genome %d' %(self.genome,))
         
         # Check if genome has AT LEAST some experience
         if (self.shouldCheckExperience): 
-            if not self.checkExperience(genome):
+            if not self._checkExperience(genome):
                 genome.fitness = 0
                 logger.info('Genome %d has no min. experience'%(self.genome))
                 return
     
-  
-        #Start the game with current genome network
-
         v = verkehr.Verkehr()
         v.setup()
         netOutput = [0] * 7
@@ -175,10 +168,12 @@ class Learner(object):
 
         genome.set_fitness(v.get_cost())
 
-    # Validate if any acction occur uppon a given input (in this case, distance).
-    # genome only keeps a single activation value for any given input,
-    #it will return false
-    def checkExperience(self, genome):
+    """
+    Validate if any acction occur uppon a given input (in this case, distance).
+    genome only keeps a single activation value for any given input,
+    it will return false
+    """
+    def _checkExperience(self, genome):
   
         step, start, stop = (0.7, 0.0, 7)
 
@@ -188,19 +183,18 @@ class Learner(object):
         for k in np.arange(start,stop,step):
             inputs[0][0] = k
 
-            activation = genome.activate(inputs)
+            genome.activate(inputs)
             
             state = False
     
             outputs.update({state:True})
-        if len(outputs.keys())>1:
-            return True
-        return False
 
+        return len(outputs.keys()) > 1
 
-
-    # Load genomes saved from saver
-    def loadGenomes(self, genomes, deleteOthers):
+    """
+    Load genomes saved from saver
+    """
+    def _loadGenomes(self, genomes, deleteOthers):
         if deleteOthers:
             self.genomes = []
   
@@ -209,14 +203,13 @@ class Learner(object):
             self.genomes.append(genomes)
             loaded +=1
   
-
         logger.info('Loaded %d genomes!' %(loaded,))
 
-
-
-    # Builds a new genome based on the 
-    # expected number of inputs and outputs
-    def buildGenome(self, inputs, outputs):
+    """
+    Builds a new genome based on the 
+    expected number of inputs and outputs
+    """
+    def _buildGenome(self, inputs, outputs):
         logger.info('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
         network = Perceptron(inputs, 4,outputs)
@@ -224,11 +217,11 @@ class Learner(object):
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network
 
-
-
-    #SPECIFIC to Neural Network.
-    # Crossover two networks
-    def crossOver(self, netA, netB):
+    """
+    SPECIFIC to Neural Network.
+    Crossover two networks
+    """
+    def _crossOver(self, netA, netB):
         #Swap (50% prob.)
         if (random.random() > 0.5):
             temp = netA
@@ -254,26 +247,28 @@ class Learner(object):
 
         return netA
 
-
-
-  # Does random mutations across all
-  # the biases and weights of the Networks
-  # (This must be done in the JSON to
-  # prevent modifying the current one)
-    def mutate(self, net):
+    """
+    Does random mutations across all
+    the biases and weights of the Networks
+    (This must be done in the JSON to
+    prevent modifying the current one)
+    """
+    def _mutate(self, net):
         # Mutate
         # get dict from net
         net_dict = net.as_dict
-        self.mutateDataKeys(net_dict, 'biases', self.mutationProb)
-        self.mutateDataKeys(net_dict, 'weights', self.mutationProb)
+        self._mutateDataKeys(net_dict, 'biases', self.mutationProb)
+        self._mutateDataKeys(net_dict, 'weights', self.mutationProb)
         net.reload()
         return net
 
-    # Given an Array of objects with key `key`,
-    # and also a `mutationRate`, randomly Mutate
-    # the value of each key, if random value is
-    # lower than mutationRate for each element.
-    def mutateDataKeys(self, a, key, mutationRate):
+    """
+    Given an Array of objects with key `key`,
+    and also a `mutationRate`, randomly Mutate
+    the value of each key, if random value is
+    lower than mutationRate for each element.
+    """
+    def _mutateDataKeys(self, a, key, mutationRate):
         for k in range(0,len(a[key])):
         # Should mutate?
             if (random.random() > mutationRate):
