@@ -58,7 +58,6 @@ class Learner(object):
 
         while(self.genome < len(self.genomes) and not self.interuptted):
             self._executeGenome()
-            gc.collect()
 
         self._genify()
 
@@ -97,7 +96,6 @@ class Learner(object):
     
 
         logger.info('Completed generation %d' %(self.generation,))
-
 
 
     """

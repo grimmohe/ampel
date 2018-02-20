@@ -12,7 +12,7 @@ import time
 
 class Perceptron(object):
 
-    def __init__(self, n_input,n_hidden_1, n_output):
+    def __init__(self, n_input, n_hidden_1, n_output):
         self.n_input = n_input
         self.n_hidden_1 = n_hidden_1
         self.n_output = n_output
@@ -26,14 +26,17 @@ class Perceptron(object):
         self.biases_arr = []
         
     def set_fitness(self, points):
-        logger.info('fitness recorded: %d'%(points,))
         self.fitness = points
 
      # Create model
-    def multilayer_perceptron(self, X, weights, biases):
-        layer_1 = tf.sigmoid(tf.add(tf.matmul(X, weights['h1']), biases['b1']))
+    def multilayer_perceptron(self, input, weights, biases):
+        layer_1 =  self._append(input, weights['h1'], biases['b1'])
+        out = self._append(layer_1,  weights['out'], biases['out'])
 
-        return tf.sigmoid(tf.matmul(layer_1, weights['out']) + biases['out'])
+        return out
+
+    def _append(self, prev_layer, weights, biases):
+        return tf.sigmoid(tf.matmul(prev_layer, weights) + biases)
    
     # tf Graph input
     def init1(self):
@@ -78,7 +81,6 @@ class Perceptron(object):
         weights_arr = self.as_dict['weights']
         biases_arr = self.as_dict['biases']
         dim1 = self.n_input*self.n_hidden_1
-        dim2 = self.n_hidden_1*self.n_output
         h1 = tf.convert_to_tensor(weights_arr[:dim1])
         out = tf.convert_to_tensor(weights_arr[dim1:])
 
@@ -102,5 +104,3 @@ class Perceptron(object):
 
     def __unicode__(self):
         return str(self.fitness)
-
-
