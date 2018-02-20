@@ -30,7 +30,7 @@ class Learner(object):
 
         # Build genomes if needed
         while (len(self.genomes) < self.genomeUnits):
-            self.genomes.append(self.buildGenome(44, 7))
+            self.genomes.append(self.buildGenome(440, 7))
   
         logger.info('Build genomes done')
         self.executeGeneration()
@@ -219,7 +219,7 @@ class Learner(object):
     def buildGenome(self, inputs, outputs):
         logger.info('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 4,outputs)
+        network = Perceptron(inputs, 128,outputs)
 
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network

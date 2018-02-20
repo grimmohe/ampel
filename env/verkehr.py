@@ -17,6 +17,7 @@ class Verkehr:
         self.steps = 0
         self.cost = 0
         self.sensor_out = []
+        self.sensor_out_accu = [[0] * 44] * 10
         self.logger = logging.getLogger(__name__)
 
     def move(self, car):
@@ -102,7 +103,10 @@ class Verkehr:
         self.logger.info('step %s, cost %s', self.steps, self.cost)
         self.logger.debug(self.sensor_out)
 
-        return self.sensor_out
+        self.sensor_out_accu = self.sensor_out_accu[:9]
+        self.sensor_out_accu.insert(0,self.sensor_out)
+
+        return [item for sublist in self.sensor_out_accu for item in sublist]
 
     def get_cost(self):
         return self.cost
