@@ -8,6 +8,7 @@ import tensorflow as tf
 from tfperceptron import Perceptron
 import time
 from env import verkehr
+import gc
 
 
 logger = logging.getLogger('dino.learner')
@@ -57,6 +58,7 @@ class Learner(object):
 
         while(self.genome < len(self.genomes) and not self.interuptted):
             self._executeGenome()
+            gc.collect()
 
         self._genify()
 
@@ -117,7 +119,7 @@ class Learner(object):
             f.append(select.fitness)
 
         selected = None
-        logger.info('Fitness: #### %s', f)
+        logger.info('Fitness: #### %s %s', self.generation, f)
         return s
 
     """
@@ -158,7 +160,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.info('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 128, outputs)
+        network = Perceptron(inputs, 32, outputs)
 
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network
