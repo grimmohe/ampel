@@ -8,6 +8,7 @@ import numpy
 import logging
 logger = logging.getLogger('percp')
 import time
+import random
 
 
 class Perceptron(object):
@@ -30,12 +31,15 @@ class Perceptron(object):
         self.x = tf.placeholder('float', [None, self.n_input])
         self.pred = self._multilayer_perceptron(self.x, self.weights, self.biases)
 
+
     @staticmethod
     def init():
-        Perceptron._session.run(tf.initialize_all_variables())
+        Perceptron._session.run(tf.global_variables_initializer())
+
 
     def set_fitness(self, points):
         self.fitness = points
+
 
      # Create model
     def _multilayer_perceptron(self, input, weights, biases):
@@ -43,14 +47,17 @@ class Perceptron(object):
         out = self._append(layer_1,  weights['out'], biases['out'])
         return out
 
+
     def _append(self, prev_layer, weights, biases):
         return tf.sigmoid(tf.matmul(prev_layer, weights) + biases)
    
+
     # Store layers weight & bias
     def activate(self, inputs):
         logger.info('activating for input %s' %(str(inputs),))
         outputs = Perceptron._session.run(self.pred, feed_dict={self.x: inputs})
         return outputs
+
 
     def get_dict(self):
         arr1 = tf.reshape(self.weights['h1'], [self.n_input*self.n_hidden_1]).eval(session=Perceptron._session)
@@ -60,37 +67,28 @@ class Perceptron(object):
 
         return {"weights":weight_arr, "biases":biases_arr}
 
+
     def copy(self, other):
         for key in self.weights:
-            tf.assign(self.weights[key], other.weights[key])
+            tf.assign(self.weights[key], other.weights[key]).eval(session=Perceptron._session)
         for key in self.biases:
-            tf.assign(self.biases[key], other.biases[key])
+            tf.assign(self.biases[key], other.biases[key]).eval(session=Perceptron._session)
+
 
     def cross(self, other):
-        pass
+        for key in self.biases:
+            self._cross(self.biases[key], other.biases[key])
+        for key in self.weights:
+            self._cross(self.weights[key], other.weights[key])
+
+
+    def _cross(self, own, other):
+        tf.assign(own, tf.divide(tf.add(own, other), 2)).eval(session=Perceptron._session)
+
 
     def mutate(self, factor=0.2):
         pass
 
-        """
-        weights = {
-            'h1': tf.Variable(tf.random_uniform([self.n_input, self.n_hidden_1], minval=factor*-1, maxval=factor)),
-            'out': tf.Variable(tf.random_uniform([self.n_hidden_1, self.n_output], minval=factor*-1, maxval=factor))
-        }
-        biases = {
-            'b1': tf.Variable(tf.random_uniform([self.n_hidden_1], minval=factor*-1, maxval=factor)),
-            'out': tf.Variable(tf.random_uniform([self.n_output], minval=factor*-1, maxval=factor))
-        }
-        x = tf.placeholder('float', [None, self.n_input])
-        Perceptron._session.run(tf.initialize_all_variables())
-
-        arr1 = tf.reshape(weights['h1'], [self.n_input*self.n_hidden_1]).eval(session=Perceptron._session)
-        
-        arr2 = tf.reshape(weights['out'],[self.n_hidden_1*self.n_output]).eval(session=Perceptron._session)
-        weight_arr = numpy.append(arr1, arr2)
-        biases_arr = numpy.append(biases['b1'].eval(session=Perceptron._session),biases['out'].eval(session=Perceptron._session))
-        return {"weights":weight_arr,"biases":biases_arr}
-        """
 
     def __unicode__(self):
         return str(self.fitness)
