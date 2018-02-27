@@ -44,7 +44,7 @@ class Perceptron(object):
         return out
 
     def _append(self, prev_layer, weights, biases):
-        return tf.sigmoid(tf.matmul(prev_layer, weights) + biases)
+        return tf.sigmoid(tf.add(tf.matmul(prev_layer, weights), biases))
    
     # Store layers weight & bias
     def activate(self, inputs):
@@ -67,27 +67,19 @@ class Perceptron(object):
         pass
 
     def mutate(self, factor=0.2):
-        pass
-
-        """
-        weights = {
-            'h1': tf.Variable(tf.random_uniform([self.n_input, self.n_hidden_1], minval=factor*-1, maxval=factor)),
-            'out': tf.Variable(tf.random_uniform([self.n_hidden_1, self.n_output], minval=factor*-1, maxval=factor))
-        }
-        biases = {
-            'b1': tf.Variable(tf.random_uniform([self.n_hidden_1], minval=factor*-1, maxval=factor)),
-            'out': tf.Variable(tf.random_uniform([self.n_output], minval=factor*-1, maxval=factor))
-        }
-        x = tf.placeholder('float', [None, self.n_input])
-        Perceptron._session.run(tf.initialize_all_variables())
-
-        arr1 = tf.reshape(weights['h1'], [self.n_input*self.n_hidden_1]).eval(session=Perceptron._session)
         
-        arr2 = tf.reshape(weights['out'],[self.n_hidden_1*self.n_output]).eval(session=Perceptron._session)
-        weight_arr = numpy.append(arr1, arr2)
-        biases_arr = numpy.append(biases['b1'].eval(session=Perceptron._session),biases['out'].eval(session=Perceptron._session))
-        return {"weights":weight_arr,"biases":biases_arr}
-        """
+        for key in self.weights:
+            self._mutate(self.weights[key], factor)
+        for key in self.biases:
+            self._mutate(self.biases[key], factor)
+
+    def _gaussian_noise_layer(self, input_layer, std):
+        noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32) 
+        return tf.add(input_layer, noise)
+
+    def _mutate(self, layer, factor):
+        noise = self._gaussian_noise_layer(layer, factor)
+        tf.assign(layer, noise).eval(session=self._session)
 
     def __unicode__(self):
         return str(self.fitness)
