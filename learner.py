@@ -2,9 +2,7 @@ import collections
 from collections import OrderedDict
 import copy
 import logging
-import numpy as np
 import random
-import tensorflow as tf
 from tfperceptron import Perceptron
 import time
 from env import verkehr
@@ -120,65 +118,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.info('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 32, outputs)
+        network = Perceptron(inputs, 1024, outputs)
 
         logger.info('Build genome %d done' %(len(self.genomes)+1,))
         return network
-
-    """
-    SPECIFIC to Neural Network.
-    Crossover two networks
-    """
-    def _crossOver(self, netA, netB):
-        #Swap (50% prob.)
-        if (random.random() > 0.5):
-            temp = netA
-            netA = netB
-            netB = temp
-  
-        # get dict from net
-        netA_dict = netA.as_dict
-        netB_dict = netB.as_dict
-
-        # Cross over bias
-        netA_biases = netA_dict['biases']
-        netB_biases = netB_dict['biases']
-        cutLocation = int(len(netA_biases) * random.random())
-        netA_updated_biases = np.append(netA_biases[(range(0,cutLocation)),],
-            netB_biases[(range(cutLocation, len(netB_biases))),]) 
-        netB_updated_biases = np.append(netB_biases[(range(0,cutLocation)),],
-            netA_biases[(range(cutLocation, len(netA_biases))),]) 
-        netA_dict['biases'] = netA_updated_biases
-        netB_dict['biases'] = netB_updated_biases
-        netA.reload()
-        netB.reload()
-
-        return netA
-
-    """
-    Does random mutations across all
-    the biases and weights of the Networks
-    (This must be done in the JSON to
-    prevent modifying the current one)
-    """
-    def _mutate(self, net):
-        # Mutate
-        # get dict from net
-        net_dict = net.as_dict
-        self._mutateDataKeys(net_dict, 'biases', self.mutationProb)
-        self._mutateDataKeys(net_dict, 'weights', self.mutationProb)
-        net.reload()
-        return net
-
-    """
-    Given an Array of objects with key `key`,
-    and also a `mutationRate`, randomly Mutate
-    the value of each key, if random value is
-    lower than mutationRate for each element.
-    """
-    def _mutateDataKeys(self, a, key, mutationRate):
-        for k in range(len(a[key])):
-        # Should mutate?
-            if (random.random() > mutationRate):
-                continue
-            a[key][k] += a[key][k] * (random.random() - 0.5) * 1.5 + (random.random() - 0.5)
