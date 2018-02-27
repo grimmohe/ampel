@@ -61,7 +61,10 @@ class Perceptron(object):
         return {"weights":weight_arr, "biases":biases_arr}
 
     def copy(self, other):
-        pass
+        for key in self.weights:
+            tf.assign(self.weights[key], other.weights[key])
+        for key in self.biases:
+            tf.assign(self.biases[key], other.biases[key])
 
     def cross(self, other):
         pass
