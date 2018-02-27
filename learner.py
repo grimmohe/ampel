@@ -34,6 +34,8 @@ class Learner(object):
         # Build genomes if needed
         while (len(self.genomes) < self.genomeUnits):
             self.genomes.append(self._buildGenome(660, 7))
+
+        Perceptron.init()
   
         logger.info('Build genomes done')
         
@@ -62,63 +64,23 @@ class Learner(object):
         self._genify()
 
     def _genify(self):
-
-        # Kill worst genomes
-        self.genomes = self._selectBestGenomes()
-
-        # Copy best genomes
-        bestGenomes = self.genomes
-
-        # Cross Over ()
-        while len(self.genomes) < self.genomeUnits - self.mutations:
-            # Get two random Genomes
-            genA = random.choice(bestGenomes).copy()
-            genB = random.choice(bestGenomes).copy()
-            #Cross over and Mutate
-            newGenome = self._mutate(self._crossOver(genA, genB))
-            genA = None
-            genB = None
-            #Add to generation
-            self.genomes.append(newGenome)
-    
-
-        # Mutation-only
-        while len(self.genomes) < self.genomeUnits:
-            # Get two random Genomes
-            gen = random.choice(bestGenomes).copy()
-            #logger.info('mutation old genome %s'%(str(gen.as_dict),))
-            # Cross over and Mutate
-            newGenome = self._mutate(gen)
-            #logger.info('mutation new genome %s'%(str(newGenome.as_dict),))
-            # Add to generation
-            self.genomes.append(newGenome)
-            #logger.info('mutation old genome after mutation %s'%(str(gen.as_dict),))
-    
-
-        logger.info('Completed generation %d' %(self.generation,))
-
-
-    """
-    Sort all the genomes, and delete the worst one
-    untill the genome list has selectN elements.
-    """
-    def _selectBestGenomes(self):
+        # best genomes to the front
         self.genomes.sort(key=lambda x: x.fitness)
 
-        selected = self.genomes[:self.selection]
-        tf.reset_default_graph()
-
-        s = []
         f = []
-        for select in selected:
-            fit = select.copy()
-            fit.reload()
-            s.append(fit)
-            f.append(select.fitness)
-
-        selected = None
+        for g in self.genomes:
+            f.append(g.fitness)
         logger.info('Fitness: #### %s %s', self.generation, f)
-        return s
+
+        bestGenomes = self.genomes[:self.selection]
+
+        for index in range(self.selection, self.genomeUnits):
+            self.genomes[index].copy(random.choice(bestGenomes))
+            if index < self.genomeUnits - self.mutations:
+                self.genomes[index].cross(random.choice(bestGenomes))
+            self.genomes[index].mutate()
+
+        logger.info('Completed generation %d' %(self.generation,))
 
     """
     Waits the game to end, and start a new one, then:
