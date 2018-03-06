@@ -20,12 +20,16 @@ class Perceptron(object):
         self.n_output = n_output
         self.fitness = 0
         self.x = tf.placeholder('float', [None, self.n_input])
+        self.weights = {}
+        self.biases = {}
         self.pred = self._multilayer_perceptron()
 
     @staticmethod
     def init():
         Perceptron._session.run(tf.global_variables_initializer())
 
+    def _multilayer_perceptron(self):
+        pass
 
     def set_fitness(self, points):
         self.fitness = points
