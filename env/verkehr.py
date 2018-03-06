@@ -50,7 +50,7 @@ class Verkehr:
             car.street = next_street
             distance_left = next_street.length
 
-            self.logger.info('car %s goes to street %s', car.id, car.street.id)
+            self.logger.debug('car %s goes to street %s', car.id, car.street.id)
             
         else:
             for front in self.cars:
@@ -101,7 +101,7 @@ class Verkehr:
         if self.logger.isEnabledFor(logging.DEBUG):
             for car in self.cars:
                 self.logger.debug(car)
-        self.logger.info('step %s, cost %s', self.steps, self.cost)
+        self.logger.debug('step %s, cost %s', self.steps, self.cost)
         self.logger.debug(self.sensor_out)
 
         self.sensor_out_accu = self.sensor_out_accu[:self.accumulate-1]

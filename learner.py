@@ -35,7 +35,7 @@ class Learner(object):
 
         Perceptron.init()
   
-        logger.info('Build genomes done')
+        logger.debug('Build genomes done')
         
         while True:
             self._executeGeneration()
@@ -68,7 +68,7 @@ class Learner(object):
         f = []
         for g in self.genomes:
             f.append(g.fitness)
-        logger.info('Fitness: #### %s %s', self.generation, f)
+        logger.info('Fitness: %s', f)
 
         bestGenomes = self.genomes[:self.selection]
 
@@ -83,7 +83,7 @@ class Learner(object):
             factor = genome.fitness / 1000.
             genome.mutate(factor=factor)
 
-        logger.info('Completed generation %d' %(self.generation,))
+        logger.debug('Completed generation %d' %(self.generation,))
 
     """
     Waits the game to end, and start a new one, then:
@@ -95,7 +95,7 @@ class Learner(object):
     def _executeGenome(self):
         genome = self.genomes[self.genome]
         self.genome += 1
-        logger.info('Executing genome %d' %(self.genome,))
+        logger.debug('Executing genome %d' %(self.genome,))
     
         v = verkehr.Verkehr(15)
         v.setup()
@@ -121,9 +121,9 @@ class Learner(object):
     expected number of inputs and outputs
     """
     def _buildGenome(self, inputs, outputs):
-        logger.info('Build genome %d' %(len(self.genomes)+1,))
+        logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
         network = Perceptron(inputs, 1024, outputs)
 
-        logger.info('Build genome %d done' %(len(self.genomes)+1,))
+        logger.debug('Build genome %d done' %(len(self.genomes)+1,))
         return network
