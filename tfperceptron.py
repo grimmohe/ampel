@@ -41,15 +41,6 @@ class Perceptron(object):
         return outputs
 
 
-    def get_dict(self):
-        arr1 = tf.reshape(self.weights['h1'], [self.n_input*self.n_hidden_1]).eval(session=Perceptron._session)
-        arr2 = tf.reshape(self.weights['out'],[self.n_hidden_1*self.n_output]).eval(session=Perceptron._session)
-        weight_arr = numpy.append(arr1, arr2)
-        biases_arr = numpy.append(self.biases['b1'].eval(session=Perceptron._session),self.biases['out'].eval(session=Perceptron._session))
-
-        return {"weights":weight_arr, "biases":biases_arr}
-
-
     def copy(self, other):
         for key in self.weights:
             tf.assign(self.weights[key], other.weights[key]).eval(session=Perceptron._session)
@@ -74,8 +65,9 @@ class Perceptron(object):
         for key in self.biases:
             self._mutate(self.biases[key], factor)
 
-    def _gaussian_noise_layer(self, input_layer, std):
-        noise = tf.random_normal(shape=tf.shape(input_layer), mean=0.0, stddev=std, dtype=tf.float32) 
+    def _gaussian_noise_layer(self, input_layer, factor):
+        noise = tf.random_uniform(shape=tf.shape(input_layer), minval=factor*-1, maxval=factor)
+        print("noise", noise.eval(session=Perceptron._session))
         return tf.add(input_layer, noise)
 
     def _mutate(self, layer, factor):
