@@ -74,7 +74,7 @@ class Verkehr:
         car.status = status
 
         if distance_left > car.street.length:
-            self.logger.warning('car %s has %s left on street %s with a length of %s!', car.id, distance_left, car.street.id, car.street.length)
+            self.logger.debug('car %s has %s left on street %s with a length of %s!', car.id, distance_left, car.street.id, car.street.length)
 
         return int(status == CarStatus.WAITING) + int(stopped)
 

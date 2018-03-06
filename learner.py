@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron_1Layer as Perceptron
+from tfperceptron import Perceptron_2Layer as Perceptron
 import time
 from env import verkehr
 import gc
@@ -14,7 +14,6 @@ class Learner(object):
 
     def __init__(self, genomeUnits, selection, mutations, mutationProb):
         self.genomes = []
-        self.genome = 0
         self.generation = 0
         self.shouldCheckExperience = False
         self.genomeUnits = genomeUnits
@@ -54,10 +53,8 @@ class Learner(object):
         self.generation += 1
         logger.info('Executing generation %d'%(self.generation,))
 
-        self.genome = 0
-
-        while(self.genome < len(self.genomes) and not self.interuptted):
-            self._executeGenome()
+        for genome in self.genomes[self.selection:]:
+            self._executeGenome(genome)
 
         self._genify()
 
@@ -73,14 +70,14 @@ class Learner(object):
         bestGenomes = self.genomes[:self.selection]
 
         # overwrite loosers
-        for genome in self.genomes[self.selection:self.genomeUnits]:
+        for genome in self.genomes[self.selection:]:
             genome.copy(random.choice(bestGenomes))
         # some get crossed
         for genome in self.genomes[self.selection:self.genomeUnits-self.mutations]:
             genome.cross(random.choice(bestGenomes))
         # all loosers get mutated
-        for genome in self.genomes[self.selection:self.genomeUnits]:
-            factor = genome.fitness / 1000.
+        for genome in self.genomes[self.selection:]:
+            factor = genome.fitness * self.mutationProb
             genome.mutate(factor=factor)
 
         logger.debug('Completed generation %d' %(self.generation,))
@@ -92,27 +89,21 @@ class Learner(object):
        set it's output
     3) When the game has ended and compute the fitness
     """
-    def _executeGenome(self):
-        genome = self.genomes[self.genome]
-        self.genome += 1
-        logger.debug('Executing genome %d' %(self.genome,))
-    
+    def _executeGenome(self, genome):    
         v = verkehr.Verkehr(15)
         v.setup()
 
-        netOutput = [0] * 7
+        param = [0] * 7
         for _ in range(100):
-            gameOutput = v.step(lights=netOutput)
+            gameOutput = v.step(lights=param)
             netOutput = genome.activate([gameOutput])[0]
-    
-            new_out = []
-            for out in netOutput:
-                if (out < 0.5):
-                    new_out.append(0)
-                else:
-                    new_out.append(1)
 
-            netOutput = new_out
+            param.clear()
+            for out in netOutput:
+                if (out < 0):
+                    param.append(0)
+                else:
+                    param.append(1)
 
         genome.set_fitness(v.get_cost())
 
@@ -123,7 +114,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 1024, outputs)
+        network = Perceptron(inputs, 2048, 512, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1,))
         return network

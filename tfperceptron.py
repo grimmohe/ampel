@@ -6,6 +6,7 @@ import copy
 import tensorflow as tf
 import numpy
 import logging
+import sys
 logger = logging.getLogger('percp')
 import time
 import random
@@ -18,14 +19,18 @@ class Perceptron(object):
     def __init__(self, n_input, n_output):
         self.n_input = n_input
         self.n_output = n_output
-        self.fitness = 0
+        self.fitness = sys.maxsize
         self.x = tf.placeholder('float', [None, self.n_input])
+        self.weights = {}
+        self.biases = {}
         self.pred = self._multilayer_perceptron()
 
     @staticmethod
     def init():
         Perceptron._session.run(tf.global_variables_initializer())
 
+    def _multilayer_perceptron(self):
+        pass
 
     def set_fitness(self, points):
         self.fitness = points
@@ -117,10 +122,10 @@ class Perceptron_2Layer(Perceptron):
             'out': tf.Variable(tf.random_normal([self.n_output]))
         }
 
-        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        layer_2 =  tf.sigmoid(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
-        out = tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out'])
-
+        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
+        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
+        out = tf.add(tf.matmul(layer_2,  self.weights['out']), self.biases['out'])
+        
 class Perceptron_5Layer(Perceptron):
 
     def __init__(self, n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_hidden_4, n_hidden_5, n_output):
@@ -157,5 +162,6 @@ class Perceptron_5Layer(Perceptron):
         layer_4 =  tf.tanh(tf.add(tf.matmul(layer_3, self.weights['h4']), self.biases['b4']))
         layer_5 =  tf.tanh(tf.add(tf.matmul(layer_4, self.weights['h5']), self.biases['b5']))
         out = tf.tanh(tf.add(tf.matmul(layer_5,  self.weights['out']), self.biases['out']))
+
         return out
 
