@@ -72,11 +72,16 @@ class Learner(object):
 
         bestGenomes = self.genomes[:self.selection]
 
-        for index in range(self.selection, self.genomeUnits):
-            self.genomes[index].copy(random.choice(bestGenomes))
-            if index < self.genomeUnits - self.mutations:
-                self.genomes[index].cross(random.choice(bestGenomes))
-            self.genomes[index].mutate()
+        # overwrite loosers
+        for genome in self.genomes[self.selection:self.genomeUnits]:
+            genome.copy(random.choice(bestGenomes))
+        # some get crossed
+        for genome in self.genomes[self.selection:self.genomeUnits-self.mutations]:
+            genome.cross(random.choice(bestGenomes))
+        # all loosers get mutated
+        for genome in self.genomes[self.selection:self.genomeUnits]:
+            factor = genome.fitness / 1000.
+            genome.mutate(factor=factor)
 
         logger.info('Completed generation %d' %(self.generation,))
 
