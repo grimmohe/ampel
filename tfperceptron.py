@@ -120,5 +120,42 @@ class Perceptron_2Layer(Perceptron):
         layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
         layer_2 =  tf.sigmoid(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
         out = tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out'])
+
+class Perceptron_5Layer(Perceptron):
+
+    def __init__(self, n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_hidden_4, n_hidden_5, n_output):
+        self.n_hidden_1 = n_hidden_1
+        self.n_hidden_2 = n_hidden_2
+        self.n_hidden_3 = n_hidden_3
+        self.n_hidden_4 = n_hidden_4
+        self.n_hidden_5 = n_hidden_5
+        Perceptron.__init__(self,n_input, n_output)
+
+    # Create model
+    def _multilayer_perceptron(self):
+
+        self.weights = {
+            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
+            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
+            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
+            'h4': tf.Variable(tf.random_normal([self.n_hidden_3, self.n_hidden_4])),
+            'h5': tf.Variable(tf.random_normal([self.n_hidden_4, self.n_hidden_5])),
+            'out': tf.Variable(tf.random_normal([self.n_hidden_5, self.n_output]))
+        }
+        self.biases = {
+            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
+            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
+            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
+            'b4': tf.Variable(tf.random_normal([self.n_hidden_4])),
+            'b5': tf.Variable(tf.random_normal([self.n_hidden_5])),
+            'out': tf.Variable(tf.random_normal([self.n_output]))
+        }
+
+        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
+        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
+        layer_3 =  tf.tanh(tf.add(tf.matmul(layer_2, self.weights['h3']), self.biases['b3']))
+        layer_4 =  tf.tanh(tf.add(tf.matmul(layer_3, self.weights['h4']), self.biases['b4']))
+        layer_5 =  tf.tanh(tf.add(tf.matmul(layer_4, self.weights['h5']), self.biases['b5']))
+        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.weights['out']), self.biases['out']))
         return out
 
