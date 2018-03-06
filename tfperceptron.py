@@ -34,10 +34,6 @@ class Perceptron(object):
     def set_fitness(self, points):
         self.fitness = points
 
-    def _append(self, prev_layer, weights, biases):
-        return tf.sigmoid(tf.add(tf.matmul(prev_layer, weights), biases))
-   
-
     # Store layers weight & bias
     def activate(self, inputs):
         if logger.isEnabledFor(logging.DEBUG):
@@ -99,8 +95,8 @@ class Perceptron_1Layer(Perceptron):
             'out': tf.Variable(tf.random_normal([self.n_output]))
         }
 
-        layer_1 =  self._append(self.x, self.weights['h1'], self.biases['b1'])
-        out = self._append(layer_1,  self.weights['out'], self.biases['out'])
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
+        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out']))
         return out
 
 class Perceptron_2Layer(Perceptron):
@@ -125,8 +121,8 @@ class Perceptron_2Layer(Perceptron):
             'out': tf.Variable(tf.random_normal([self.n_output]))
         }
 
-        layer_1 =  self._append(self.x, self.weights['h1'], self.biases['b1'])
-        layer_2 =  self._append(layer_1, self.weights['h2'], self.biases['b2'])
-        out = self._append(layer_2,  self.weights['out'], self.biases['out'])
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
+        layer_2 =  tf.sigmoid(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
+        out = tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out'])
         return out
 
