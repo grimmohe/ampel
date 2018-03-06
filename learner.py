@@ -100,19 +100,17 @@ class Learner(object):
         v = verkehr.Verkehr(15)
         v.setup()
 
-        netOutput = [0] * 7
+        param = [0] * 7
         for _ in range(100):
-            gameOutput = v.step(lights=netOutput)
+            gameOutput = v.step(lights=param)
             netOutput = genome.activate([gameOutput])[0]
-    
-            new_out = []
-            for out in netOutput:
-                if (out < 0.5):
-                    new_out.append(0)
-                else:
-                    new_out.append(1)
 
-            netOutput = new_out
+            param.clear()
+            for out in netOutput:
+                if (out < 0):
+                    param.append(0)
+                else:
+                    param.append(1)
 
         genome.set_fitness(v.get_cost())
 
