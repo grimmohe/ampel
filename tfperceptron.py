@@ -32,7 +32,8 @@ class Perceptron(object):
 
     # Store layers weight & bias
     def activate(self, inputs):
-        logger.info('activating for input %s' %(str(inputs),))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('activating for input %s' %(str(inputs),))
         outputs = Perceptron._session.run(self.pred, feed_dict={self.x: inputs})
         return outputs
 
@@ -63,7 +64,6 @@ class Perceptron(object):
 
     def _gaussian_noise_layer(self, input_layer, factor):
         noise = tf.random_uniform(shape=tf.shape(input_layer), minval=factor*-1, maxval=factor)
-        print("noise", noise.eval(session=Perceptron._session))
         return tf.add(input_layer, noise)
 
     def _mutate(self, layer, factor):
