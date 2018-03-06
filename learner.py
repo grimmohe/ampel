@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron
+from tfperceptron import Perceptron_1Layer as Perceptron
 import time
 from env import verkehr
 import gc
