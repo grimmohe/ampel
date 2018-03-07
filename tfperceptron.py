@@ -15,6 +15,13 @@ import random
 class Perceptron(object):
 
     _session = tf.Session()
+    __tensor_cache = {}
+    _ops = {
+        "copy": lambda obj1, obj2, factor: tf.assign(obj1, obj2),
+        "cross": lambda obj1, obj2, factor: tf.assign(obj1, tf.divide(tf.add(obj1, obj2), 2)),
+        "mutate": lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=tf.shape(obj1), minval=factor*-1, maxval=factor)))
+    }
+
 
     def __init__(self, n_input, n_output):
         self.n_input = n_input
@@ -25,15 +32,33 @@ class Perceptron(object):
         self.biases = {}
         self.pred = self._multilayer_perceptron()
 
+
     @staticmethod
     def init():
         Perceptron._session.run(tf.global_variables_initializer())
 
+
+    @staticmethod
+    def log_tensor_object_counts():
+        logger.info("tf operations %s", len(tf.get_default_graph().get_operations()))
+
+
+    @staticmethod
+    def _get_tensor(name, obj1, obj2=None, factor=0):
+        tensor = Perceptron.__tensor_cache.get((name, obj1, obj2))
+        if tensor == None:
+            tensor = Perceptron._ops[name](obj1, obj2, factor)
+            Perceptron.__tensor_cache[(name, obj1, obj2)] = tensor
+        return tensor
+
+
     def _multilayer_perceptron(self):
         pass
 
+
     def set_fitness(self, points):
         self.fitness = points
+
 
     # Store layers weight & bias
     def activate(self, inputs):
@@ -45,9 +70,9 @@ class Perceptron(object):
 
     def copy(self, other):
         for key in self.weights:
-            tf.assign(self.weights[key], other.weights[key]).eval(session=Perceptron._session)
+            Perceptron._get_tensor("copy", self.weights[key], other.weights[key]).eval(session=Perceptron._session)
         for key in self.biases:
-            tf.assign(self.biases[key], other.biases[key]).eval(session=Perceptron._session)
+            Perceptron._get_tensor("copy", self.biases[key], other.biases[key]).eval(session=Perceptron._session)
 
 
     def cross(self, other):
@@ -58,7 +83,7 @@ class Perceptron(object):
 
 
     def _cross(self, own, other):
-        tf.assign(own, tf.divide(tf.add(own, other), 2)).eval(session=Perceptron._session)
+        Perceptron._get_tensor("cross", own, other).eval(session=Perceptron._session)
 
 
     def mutate(self, factor=0.2):
@@ -67,16 +92,14 @@ class Perceptron(object):
         for key in self.biases:
             self._mutate(self.biases[key], factor)
 
-    def _gaussian_noise_layer(self, input_layer, factor):
-        noise = tf.random_uniform(shape=tf.shape(input_layer), minval=factor*-1, maxval=factor)
-        return tf.add(input_layer, noise)
 
     def _mutate(self, layer, factor):
-        noise = self._gaussian_noise_layer(layer, factor)
-        tf.assign(layer, noise).eval(session=self._session)
+        Perceptron._get_tensor("mutate", layer, factor=factor).eval(session=self._session)
+
 
     def __unicode__(self):
         return str(self.fitness)
+
 
 class Perceptron_1Layer(Perceptron):
 
@@ -101,7 +124,6 @@ class Perceptron_1Layer(Perceptron):
         return out
 
 class Perceptron_2Layer(Perceptron):
-
 
     def __init__(self, n_input, n_hidden_1, n_hidden_2, n_output):
         self.n_hidden_1 = n_hidden_1
