@@ -8,8 +8,8 @@ import time
 from env import verkehr
 import gc
 
-
 logger = logging.getLogger('dino.learner')
+
 class Learner(object):
 
     def __init__(self, genomeUnits, selection, mutations, mutationProb):
@@ -28,16 +28,25 @@ class Learner(object):
     """
     def startLearning(self):
 
-        # Build genomes if needed
-        while (len(self.genomes) < self.genomeUnits):
-            self.genomes.append(self._buildGenome(660, 7))
+        try:
 
-        Perceptron.init()
-  
-        logger.debug('Build genomes done')
+            # Build genomes if needed
+            while (len(self.genomes) < self.genomeUnits):
+                self.genomes.append(self._buildGenome(660, 7))
+
+            Perceptron.init()
+    
+            logger.debug('Build genomes done')
+            
+            while True:
+                self._executeGeneration()
+
+                Perceptron.log_tensor_object_counts()
+
+        except KeyboardInterrupt:
+            pass
+
         
-        while True:
-            self._executeGeneration()
 
     """
     Given the entire generation of genomes (An array),
