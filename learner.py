@@ -41,8 +41,6 @@ class Learner(object):
             while True:
                 self._executeGeneration()
 
-                Perceptron.log_tensor_object_counts()
-
         except KeyboardInterrupt:
             pass
 

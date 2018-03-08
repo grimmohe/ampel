@@ -28,8 +28,7 @@ class Perceptron(object):
         self.n_output = n_output
         self.fitness = sys.maxsize
         self.x = tf.placeholder('float', [None, self.n_input])
-        self.weights = {}
-        self.biases = {}
+        self.layers = {}
         self.pred = self._multilayer_perceptron()
 
 
@@ -69,17 +68,13 @@ class Perceptron(object):
 
 
     def copy(self, other):
-        for key in self.weights:
-            Perceptron._get_tensor("copy", self.weights[key], other.weights[key]).eval(session=Perceptron._session)
-        for key in self.biases:
-            Perceptron._get_tensor("copy", self.biases[key], other.biases[key]).eval(session=Perceptron._session)
+        for layer in self.layers:
+            Perceptron._get_tensor("copy", self.layers[layer], other.layers[layer]).eval(session=Perceptron._session)
 
 
     def cross(self, other):
-        for key in self.biases:
-            self._cross(self.biases[key], other.biases[key])
-        for key in self.weights:
-            self._cross(self.weights[key], other.weights[key])
+        for layer in self.layers:
+            self._cross(self.layers[layer], other.layers[layer])
 
 
     def _cross(self, own, other):
@@ -87,10 +82,8 @@ class Perceptron(object):
 
 
     def mutate(self, factor=0.2):
-        for key in self.weights:
-            self._mutate(self.weights[key], factor)
-        for key in self.biases:
-            self._mutate(self.biases[key], factor)
+        for layer in self.layers:
+            self._mutate(self.layers[layer], factor)
 
 
     def _mutate(self, layer, factor):
@@ -110,17 +103,14 @@ class Perceptron_1Layer(Perceptron):
      # Create model
     def _multilayer_perceptron(self):
 
-        self.weights = {
-            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_output]))
-        }
-        self.biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'out': tf.Variable(tf.random_normal([self.n_output]))
-        }
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['ol'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_output]))
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out']))
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.layers['ol']), self.layers['ob']))
+
         return out
 
 class Perceptron_2Layer(Perceptron):
@@ -133,19 +123,17 @@ class Perceptron_2Layer(Perceptron):
     # Create model
     def _multilayer_perceptron(self):
 
-        self.weights = {
-            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
-        }
-        self.biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'out': tf.Variable(tf.random_normal([self.n_output]))
-        }
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['h2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['ol'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
+        
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
-        out = tf.add(tf.matmul(layer_2,  self.weights['out']), self.biases['out'])
+        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
+        out = tf.add(tf.matmul(layer_2,  self.layers['ol']), self.layers['ob'])
+        
         return out
 
