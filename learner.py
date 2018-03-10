@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron_2Layer as Perceptron
+from tfperceptron import Perceptron_RNN as Perceptron
 import time
 from env import verkehr
 import gc
@@ -21,6 +21,7 @@ class Learner(object):
         self.mutations = mutations
         self.mutationProb = mutationProb
         self.interuptted = False
+        self.traffic_sim_mem_depth = 1
         
 
     """
@@ -32,7 +33,7 @@ class Learner(object):
 
             # Build genomes if needed
             while (len(self.genomes) < self.genomeUnits):
-                self.genomes.append(self._buildGenome(660, 7))
+                self.genomes.append(self._buildGenome(44 * self.traffic_sim_mem_depth, 7))
 
             Perceptron.init()
     
@@ -97,7 +98,7 @@ class Learner(object):
     3) When the game has ended and compute the fitness
     """
     def _executeGenome(self, genome):    
-        v = verkehr.Verkehr(15)
+        v = verkehr.Verkehr(self.traffic_sim_mem_depth)
         v.setup()
 
         param = [0] * 7
@@ -121,7 +122,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 2048, 512, outputs)
+        network = Perceptron(inputs, 2048, outputs)
 
-        logger.debug('Build genome %d done' %(len(self.genomes)+1,))
+        logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network
