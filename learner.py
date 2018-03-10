@@ -64,16 +64,35 @@ class Learner(object):
         for genome in self.genomes[self.selection:]:
             self._executeGenome(genome)
 
-        self._genify()
+        self._genify_random_one()
 
-    def _genify(self):
+        logger.debug('Completed generation %d' %(self.generation,))
+
+    def _genify_random_one(self):
+        # best genome to the front
+        self.genomes.sort(key=lambda x: x.fitness)
+
+        self._log_fitness()
+
+        # get the weight or bias index to mutate
+        index = self.genomes[0].get_mutation_index()
+
+        logger.info('mutation index %s', index)
+
+        # overwrite loosers
+        for genome in self.genomes[1:]:
+            genome.copy(self.genomes[0])
+
+        # mutate
+        for genome in self.genomes:
+            genome.mutate_index(index, random.random() * 2 - 1)
+
+
+    def _genify_random_all(self):
         # best genomes to the front
         self.genomes.sort(key=lambda x: x.fitness)
 
-        f = []
-        for g in self.genomes:
-            f.append(g.fitness)
-        logger.info('Fitness: %s', f)
+        self._log_fitness()
 
         bestGenomes = self.genomes[:self.selection]
 
@@ -88,7 +107,13 @@ class Learner(object):
             factor = genome.fitness * self.mutationProb
             genome.mutate(factor=factor)
 
-        logger.debug('Completed generation %d' %(self.generation,))
+
+    def _log_fitness(self):
+        f = []
+        for g in self.genomes:
+            f.append(g.fitness)
+        logger.info('Fitness: %s', f)
+
 
     """
     Waits the game to end, and start a new one, then:
@@ -122,7 +147,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 2048, outputs)
+        network = Perceptron(inputs, 128, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network
