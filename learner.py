@@ -75,16 +75,11 @@ class Learner(object):
         self._log_fitness()
 
         # get the weight or bias index to mutate
-        index = self.genomes[0].get_mutation_index()
+        index = self.genomes[0].get_mutation_index(self.generation)
 
-        logger.info('mutation index %s', index)
-
-        # overwrite loosers
-        for genome in self.genomes[1:]:
-            genome.copy(self.genomes[0])
-
-        # mutate
-        for genome in self.genomes:
+        # overwrite and mutate loosers
+        for genome in self.genomes[self.selection:]:
+            genome.copy(random.choice(self.genomes[:self.selection]))
             genome.mutate_index(index, random.random() * 2 - 1)
 
 

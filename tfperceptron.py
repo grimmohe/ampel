@@ -33,6 +33,7 @@ class Perceptron(object):
         self.x = tf.placeholder('float', [None, self.n_input])
         self.layers = {}
         self.pred = self._multilayer_perceptron()
+        self.size = self._get_size()
 
 
     @staticmethod
@@ -53,6 +54,12 @@ class Perceptron(object):
             Perceptron.__tensor_cache[(name, obj1, obj2)] = tensor
         return tensor
 
+    
+    def _get_size(self):
+        size = 0
+        for key, layer in self.layers.items():
+            size += layer.shape.num_elements()
+        return size
 
     def _multilayer_perceptron(self):
         pass
@@ -87,10 +94,27 @@ class Perceptron(object):
     """
     Ein zufälliger Layer mit einem zufälligen Index wird für eine Mutation ausgewählt
     """
-    def get_mutation_index(self):
-        key, var = random.choice(list(self.layers.items()))
-        length = var.shape.num_elements()
-        x = random.choice(range(length))
+    def get_mutation_index(self, generation=None):
+        key = None
+        x = None
+        length = None
+        
+        if generation == None:
+            key, layer = random.choice(list(self.layers.items()))
+            length = layer.shape.num_elements()
+            x = random.randint(0, length-1)
+        else:
+            generation = generation % self.size
+            keys = list(self.layers.keys())
+            keys.sort()
+            for key in keys:
+                layer = self.layers[key]
+                length = layer.shape.num_elements()
+                if length <= generation:
+                    generation -= length
+                else:
+                    x = generation
+                    break
 
         return {'layer':key, 'pos':x, 'length': length}
 
