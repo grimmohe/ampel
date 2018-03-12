@@ -64,9 +64,14 @@ class Learner(object):
         for genome in self.genomes[self.selection:]:
             self._executeGenome(genome)
 
-        self._genify_random_one()
+        if self.genomes[0].fitness > 200:
+            self._genify_random_all()
+        else:
+            self.selection = 1
+            self._genify_random_one()
 
         logger.debug('Completed generation %d' %(self.generation,))
+
 
     def _genify_random_one(self):
         # best genome to the front
@@ -76,6 +81,7 @@ class Learner(object):
 
         # get the weight or bias index to mutate
         index = self.genomes[0].get_mutation_index(self.generation)
+
 
         # overwrite and mutate loosers
         for genome in self.genomes[self.selection:]:
@@ -100,7 +106,7 @@ class Learner(object):
         # all loosers get mutated
         for genome in self.genomes[self.selection:]:
             factor = genome.fitness * self.mutationProb
-            genome.mutate(factor=factor)
+            genome.mutate_all_layers(factor=factor)
 
 
     def _log_fitness(self):
@@ -142,7 +148,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 128, outputs)
+        network = Perceptron(inputs, 256, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network
