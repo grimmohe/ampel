@@ -19,7 +19,6 @@ class Verkehr:
         self.sensor_out = []
         self.accumulate = accumulate
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.WARNING)
 
     def move(self, car):
         distance_left = car.distance_left - car.speed
