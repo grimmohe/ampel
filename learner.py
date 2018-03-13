@@ -59,17 +59,16 @@ class Learner(object):
     """
     def _executeGeneration(self):
         self.generation += 1
-        logger.info('Executing generation %d'%(self.generation,))
+        logger.debug('Executing generation %d'%(self.generation,))
 
-        for genome in self.genomes[self.selection:]:
-            self._executeGenome(genome)
+        self._executeGenomes()
 
         if self.genomes[0].fitness > 200:
             self._genify_random_all()
         else:
             self.selection = 1
             self._genify_random_one()
-
+        
         logger.debug('Completed generation %d' %(self.generation,))
 
 
@@ -113,7 +112,7 @@ class Learner(object):
         f = []
         for g in self.genomes:
             f.append(g.fitness)
-        logger.info('Fitness: %s', f)
+        logger.info('Generation %s fitness: %s', self.generation, f)
 
 
     """
@@ -123,23 +122,35 @@ class Learner(object):
        set it's output
     3) When the game has ended and compute the fitness
     """
-    def _executeGenome(self, genome):    
-        v = verkehr.Verkehr(self.traffic_sim_mem_depth)
-        v.setup()
+    def _executeGenomes(self): 
+        genomes = self.genomes[self.selection:]
+        traffic = []
+        input = []
+        output = []
+        result = []
 
-        param = [0] * 7
+        for _ in genomes:
+            v = verkehr.Verkehr(self.traffic_sim_mem_depth)
+            v.setup()
+            traffic.append(v)
+            input.append([]) #parameter für genome
+            output.append([]) #ergebnis des netzes
+            result.append([0] * 7) #aufbereitetes ergebnis
+
         for _ in range(100):
-            gameOutput = v.step(lights=param)
-            netOutput = genome.activate([gameOutput])[0]
+            for g in range(len(genomes)):
+                input[g] = traffic[g].step(lights=result[g])
+                output[g] = genomes[g].activate([input[g]])[0]
 
-            param.clear()
-            for out in netOutput:
-                if (out < 0):
-                    param.append(0)
-                else:
-                    param.append(1)
+                result[g].clear()
+                for out in output[g]:
+                    if (out < 0):
+                        result[g].append(0)
+                    else:
+                        result[g].append(1)
 
-        genome.set_fitness(v.get_cost())
+                genomes[g].set_fitness(traffic[g].get_cost())
+
 
     """
     Builds a new genome based on the 
