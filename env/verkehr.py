@@ -16,7 +16,6 @@ class Verkehr:
         self.iterator = 0
         self.steps = 0
         self.cost = 0
-        self.step_cost = 0
         self.sensor_out = []
         self.accumulate = accumulate
         self.logger = logging.getLogger(__name__)
@@ -99,9 +98,7 @@ class Verkehr:
             self.nodes[ii].green_for = lights[ii]
 
         for car in self.cars:
-            self.step_cost += self.move(car)
-
-        self.cost += self.step_cost
+            self.cost += self.move(car)
 
         if self.logger.isEnabledFor(logging.DEBUG):
             for car in self.cars:
@@ -116,9 +113,6 @@ class Verkehr:
 
     def get_cost(self):
         return self.cost
-
-    def get_step_cost(self):
-        return self.step_cost
 
     def _init_cars(self, cars):
         self.cars = []

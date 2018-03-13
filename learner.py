@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron_RNN as Perceptron
+from tfperceptron import Perceptron_2Layer as Perceptron
 import time
 from env import verkehr
 import gc
@@ -22,7 +22,7 @@ class Learner(object):
         self.mutations = mutations
         self.mutationProb = mutationProb
         self.interuptted = False
-        self.traffic_sim_mem_depth = 1
+        self.traffic_sim_mem_depth = 15
         
 
     """
@@ -64,11 +64,12 @@ class Learner(object):
 
         self._executeGenomes()
 
-        if self.genomes[0].fitness > 200:
+        if self.generation < 3 or self.generation % 5 == 0:
             self._genify_random_all()
         else:
-            self.selection = 1
-            self._genify_random_one()
+            self._train()
+
+        self._log_fitness()
         
         logger.debug('Completed generation %d' %(self.generation,))
 
@@ -76,8 +77,6 @@ class Learner(object):
     def _genify_random_one(self):
         # best genome to the front
         self.genomes.sort(key=lambda x: x.fitness)
-
-        self._log_fitness()
 
         # get the weight or bias index to mutate
         index = self.genomes[0].get_mutation_index(self.generation)
@@ -93,8 +92,6 @@ class Learner(object):
         # best genomes to the front
         self.genomes.sort(key=lambda x: x.fitness)
 
-        self._log_fitness()
-
         bestGenomes = self.genomes[:self.selection]
 
         # overwrite loosers
@@ -106,8 +103,17 @@ class Learner(object):
         # all loosers get mutated
         for genome in self.genomes[self.selection:]:
             factor = genome.fitness * self.mutationProb
-            genome.mutate_all_layers(factor=factor)
+            genome.mutate_layer(factor=factor)
 
+
+    def _train(self):
+        # best genome to the front
+        self.genomes.sort(key=lambda x: x.fitness)
+
+        for genome in self.genomes[self.selection:]:
+            master = random.choice(self.genomes[:self.selection])
+            for i in range(100):
+                genome.learn(master.input[i], master.output[i])
 
     def _log_fitness(self):
         f = []
@@ -126,41 +132,29 @@ class Learner(object):
     def _executeGenomes(self): 
         genomes = self.genomes[self.selection:]
         traffic = []
-        input = []
-        output = []
         result = []
 
-        for _ in genomes:
+        for g in genomes:
             v = verkehr.Verkehr(self.traffic_sim_mem_depth)
             v.setup()
             traffic.append(v)
-            input.append([]) #parameter für genome
-            output.append([]) #ergebnis des netzes
+            g.input.clear() #parameter für genome
+            g.output.clear() #ergebnis des netzes
             result.append([0] * 7) #aufbereitetes ergebnis
 
         for _ in range(100):
-            min_cost = sys.maxsize
-            min_index = 0
-
             for g in range(len(genomes)):
-                input[g] = traffic[g].step(lights=result[g])
-                output[g] = genomes[g].activate([input[g]])
+                input = traffic[g].step(lights=result[g])
+                output = genomes[g].activate([input])
 
                 result[g].clear()
-                for out in output[g][0]:
+                for out in output[0]:
                     if (out < 0):
                         result[g].append(0)
                     else:
                         result[g].append(1)
 
                 genomes[g].set_fitness(traffic[g].get_cost())
-                if traffic[g].get_step_cost() < min_cost:
-                    min_cost = traffic[g].get_step_cost()
-                    min_index = g
-
-            for g in range(len(genomes)):
-                if g != min_index:
-                    genomes[g].learn([input[min_index]], output[min_index])
 
 
     """
@@ -170,7 +164,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 1024, outputs)
+        network = Perceptron(inputs, 1400, 124, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network

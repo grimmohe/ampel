@@ -36,6 +36,8 @@ class Perceptron(object):
         self.pred = self._multilayer_perceptron()
         self.size = self._get_size()
         self.story = []
+        self.input = []
+        self.output = []
 
 
     @staticmethod
@@ -78,7 +80,12 @@ class Perceptron(object):
             self.story = self.story[-10:]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug('activating for input %s' %(str(inputs),))
+
         outputs = Perceptron._session.run(self.pred, feed_dict={self.x: inputs})
+
+        self.input.append(inputs)
+        self.output.append(outputs)
+
         return outputs
 
 
@@ -128,7 +135,7 @@ class Perceptron(object):
 
     def learn(self, input, output):
         ph = Perceptron._get_tensor('placeholder', self.pred, factor=(1, self.n_output))
-        train_op = Perceptron._get_tensor('learn', self.pred, ph, 0.01)
+        train_op = Perceptron._get_tensor('learn', self.pred, ph, 0.1)
         Perceptron._session.run(train_op, feed_dict={self.x: input, ph: output})
 
 
@@ -226,7 +233,7 @@ class Perceptron_2Layer(Perceptron):
         self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
         self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_1 =  tf.nn.relu(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
         layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
         out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['ob'])
 
