@@ -7,6 +7,7 @@ from tfperceptron import Perceptron_RNN as Perceptron
 import time
 from env import verkehr
 import gc
+import sys
 
 logger = logging.getLogger('dino.learner')
 
@@ -138,18 +139,28 @@ class Learner(object):
             result.append([0] * 7) #aufbereitetes ergebnis
 
         for _ in range(100):
+            min_cost = sys.maxsize
+            min_index = 0
+
             for g in range(len(genomes)):
                 input[g] = traffic[g].step(lights=result[g])
-                output[g] = genomes[g].activate([input[g]])[0]
+                output[g] = genomes[g].activate([input[g]])
 
                 result[g].clear()
-                for out in output[g]:
+                for out in output[g][0]:
                     if (out < 0):
                         result[g].append(0)
                     else:
                         result[g].append(1)
 
                 genomes[g].set_fitness(traffic[g].get_cost())
+                if traffic[g].get_step_cost() < min_cost:
+                    min_cost = traffic[g].get_step_cost()
+                    min_index = g
+
+            for g in range(len(genomes)):
+                if g != min_index:
+                    genomes[g].learn([input[min_index]], output[min_index])
 
 
     """
@@ -159,7 +170,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 256, outputs)
+        network = Perceptron(inputs, 1024, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network

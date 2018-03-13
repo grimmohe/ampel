@@ -20,14 +20,15 @@ class Perceptron(object):
     _ops = {
         'copy': lambda obj1, obj2, factor: tf.assign(obj1, obj2),
         'cross': lambda obj1, obj2, factor: tf.assign(obj1, tf.divide(tf.add(obj1, obj2), 2)),
-        'mutate': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=tf.shape(obj1), minval=factor*-1, maxval=factor))),
+        'mutate': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=obj1.shape, minval=factor*-1, maxval=factor))),
         'mutate_layer': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.reshape(obj2, factor))),
-        'placeholder': lambda obj1, obj2, factor: tf.placeholder('float32', factor)
+        'placeholder': lambda obj1, obj2, factor: tf.placeholder('float32', factor),
+        'learn': lambda obj1, obj2, factor: tf.train.GradientDescentOptimizer(factor).minimize(tf.abs(obj2 - obj1))
     }
 
 
     def __init__(self, n_input, n_output):
-        self.n_input = n_input
+        self.n_input = n_input  
         self.n_output = n_output
         self.fitness = sys.maxsize
         self.x = tf.placeholder('float', [None, self.n_input])
@@ -123,6 +124,12 @@ class Perceptron(object):
                     break
 
         return {'layer':key, 'pos':x, 'length': length}
+
+
+    def learn(self, input, output):
+        ph = Perceptron._get_tensor('placeholder', self.pred, factor=(1, self.n_output))
+        train_op = Perceptron._get_tensor('learn', self.pred, ph, 0.01)
+        Perceptron._session.run(train_op, feed_dict={self.x: input, ph: output})
 
 
     '''
@@ -249,7 +256,7 @@ class Perceptron_RNN(Perceptron):
         self.layers['outputbias'] = tf.Variable(tf.random_normal([self.n_output]))
 
         mem = tf.assign(self.layers['input_mem'], tf.div(tf.add(self.x, self.layers['input_mem']), 2))
-        layer_1 =  tf.tanh(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
+        layer_1 =  tf.nn.relu(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
         out = tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['outputbias'])
 
         return out
