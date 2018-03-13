@@ -3,10 +3,11 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron_2Layer as Perceptron
+from tfperceptron import Perceptron_RNN as Perceptron
 import time
 from env import verkehr
 import gc
+import sys
 
 logger = logging.getLogger('dino.learner')
 
@@ -21,6 +22,7 @@ class Learner(object):
         self.mutations = mutations
         self.mutationProb = mutationProb
         self.interuptted = False
+        self.traffic_sim_mem_depth = 1
         
 
     """
@@ -32,7 +34,7 @@ class Learner(object):
 
             # Build genomes if needed
             while (len(self.genomes) < self.genomeUnits):
-                self.genomes.append(self._buildGenome(660, 7))
+                self.genomes.append(self._buildGenome(44 * self.traffic_sim_mem_depth, 7))
 
             Perceptron.init()
     
@@ -40,8 +42,6 @@ class Learner(object):
             
             while True:
                 self._executeGeneration()
-
-                Perceptron.log_tensor_object_counts()
 
         except KeyboardInterrupt:
             pass
@@ -60,21 +60,40 @@ class Learner(object):
     """
     def _executeGeneration(self):
         self.generation += 1
-        logger.info('Executing generation %d'%(self.generation,))
+        logger.debug('Executing generation %d'%(self.generation,))
 
+        self._executeGenomes()
+
+        if self.genomes[0].fitness > 200:
+            self._genify_random_all()
+        else:
+            self.selection = 1
+            self._genify_random_one()
+        
+        logger.debug('Completed generation %d' %(self.generation,))
+
+
+    def _genify_random_one(self):
+        # best genome to the front
+        self.genomes.sort(key=lambda x: x.fitness)
+
+        self._log_fitness()
+
+        # get the weight or bias index to mutate
+        index = self.genomes[0].get_mutation_index(self.generation)
+
+
+        # overwrite and mutate loosers
         for genome in self.genomes[self.selection:]:
-            self._executeGenome(genome)
+            genome.copy(random.choice(self.genomes[:self.selection]))
+            genome.mutate_index(index, random.random() * 2 - 1)
 
-        self._genify()
 
-    def _genify(self):
+    def _genify_random_all(self):
         # best genomes to the front
         self.genomes.sort(key=lambda x: x.fitness)
 
-        f = []
-        for g in self.genomes:
-            f.append(g.fitness)
-        logger.info('Fitness: %s', f)
+        self._log_fitness()
 
         bestGenomes = self.genomes[:self.selection]
 
@@ -87,9 +106,15 @@ class Learner(object):
         # all loosers get mutated
         for genome in self.genomes[self.selection:]:
             factor = genome.fitness * self.mutationProb
-            genome.mutate(factor=factor)
+            genome.mutate_all_layers(factor=factor)
 
-        logger.debug('Completed generation %d' %(self.generation,))
+
+    def _log_fitness(self):
+        f = []
+        for g in self.genomes:
+            f.append(g.fitness)
+        logger.info('Generation %s fitness: %s', self.generation, f)
+
 
     """
     Waits the game to end, and start a new one, then:
@@ -98,23 +123,45 @@ class Learner(object):
        set it's output
     3) When the game has ended and compute the fitness
     """
-    def _executeGenome(self, genome):    
-        v = verkehr.Verkehr(15)
-        v.setup()
+    def _executeGenomes(self): 
+        genomes = self.genomes[self.selection:]
+        traffic = []
+        input = []
+        output = []
+        result = []
 
-        param = [0] * 7
+        for _ in genomes:
+            v = verkehr.Verkehr(self.traffic_sim_mem_depth)
+            v.setup()
+            traffic.append(v)
+            input.append([]) #parameter für genome
+            output.append([]) #ergebnis des netzes
+            result.append([0] * 7) #aufbereitetes ergebnis
+
         for _ in range(100):
-            gameOutput = v.step(lights=param)
-            netOutput = genome.activate([gameOutput])[0]
+            min_cost = sys.maxsize
+            min_index = 0
 
-            param.clear()
-            for out in netOutput:
-                if (out < 0):
-                    param.append(0)
-                else:
-                    param.append(1)
+            for g in range(len(genomes)):
+                input[g] = traffic[g].step(lights=result[g])
+                output[g] = genomes[g].activate([input[g]])
 
-        genome.set_fitness(v.get_cost())
+                result[g].clear()
+                for out in output[g][0]:
+                    if (out < 0):
+                        result[g].append(0)
+                    else:
+                        result[g].append(1)
+
+                genomes[g].set_fitness(traffic[g].get_cost())
+                if traffic[g].get_step_cost() < min_cost:
+                    min_cost = traffic[g].get_step_cost()
+                    min_index = g
+
+            for g in range(len(genomes)):
+                if g != min_index:
+                    genomes[g].learn([input[min_index]], output[min_index])
+
 
     """
     Builds a new genome based on the 
@@ -123,7 +170,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 2048, 512, outputs)
+        network = Perceptron(inputs, 1024, outputs)
 
-        logger.debug('Build genome %d done' %(len(self.genomes)+1,))
+        logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network

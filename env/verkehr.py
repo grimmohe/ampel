@@ -16,6 +16,7 @@ class Verkehr:
         self.iterator = 0
         self.steps = 0
         self.cost = 0
+        self.step_cost = 0
         self.sensor_out = []
         self.accumulate = accumulate
         self.logger = logging.getLogger(__name__)
@@ -79,16 +80,17 @@ class Verkehr:
 
         return int(status == CarStatus.WAITING) + int(stopped)
 
-    def setup(self):
+    def setup(self, cars=20):
         self._init_streets()
         self._init_nodes()
-        self._init_cars()
+        self._init_cars(cars)
         self._init_accu()
 
     def step(self, lights=[0, 0, 0, 0, 0, 0, 0]):
         self.steps += 1
         self.sensor_out = [0] * len(self.streets) * 4
         self.cars.sort(key=lambda x: x.distance_left)
+        self.step_cost = 0
 
         if len(lights) != len(self.nodes):
             raise "wrong number of lights"
@@ -97,7 +99,9 @@ class Verkehr:
             self.nodes[ii].green_for = lights[ii]
 
         for car in self.cars:
-            self.cost += self.move(car)
+            self.step_cost += self.move(car)
+
+        self.cost += self.step_cost
 
         if self.logger.isEnabledFor(logging.DEBUG):
             for car in self.cars:
@@ -113,9 +117,12 @@ class Verkehr:
     def get_cost(self):
         return self.cost
 
-    def _init_cars(self):
+    def get_step_cost(self):
+        return self.step_cost
+
+    def _init_cars(self, cars):
         self.cars = []
-        for i in range(20):
+        for i in range(cars):
             self.cars.append(Car(i, 10 + (i % 50) / 10))
 
         for car in self.cars:

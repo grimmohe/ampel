@@ -16,21 +16,26 @@ class Perceptron(object):
 
     _session = tf.Session()
     __tensor_cache = {}
+
     _ops = {
-        "copy": lambda obj1, obj2, factor: tf.assign(obj1, obj2),
-        "cross": lambda obj1, obj2, factor: tf.assign(obj1, tf.divide(tf.add(obj1, obj2), 2)),
-        "mutate": lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=tf.shape(obj1), minval=factor*-1, maxval=factor)))
+        'copy': lambda obj1, obj2, factor: tf.assign(obj1, obj2),
+        'cross': lambda obj1, obj2, factor: tf.assign(obj1, tf.divide(tf.add(obj1, obj2), 2)),
+        'mutate': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=obj1.shape, minval=factor*-1, maxval=factor))),
+        'mutate_layer': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.reshape(obj2, factor))),
+        'placeholder': lambda obj1, obj2, factor: tf.placeholder('float32', factor),
+        'learn': lambda obj1, obj2, factor: tf.train.GradientDescentOptimizer(factor).minimize(tf.abs(obj2 - obj1))
     }
 
 
     def __init__(self, n_input, n_output):
-        self.n_input = n_input
+        self.n_input = n_input  
         self.n_output = n_output
         self.fitness = sys.maxsize
         self.x = tf.placeholder('float', [None, self.n_input])
-        self.weights = {}
-        self.biases = {}
+        self.layers = {}
         self.pred = self._multilayer_perceptron()
+        self.size = self._get_size()
+        self.story = []
 
 
     @staticmethod
@@ -40,7 +45,7 @@ class Perceptron(object):
 
     @staticmethod
     def log_tensor_object_counts():
-        logger.info("tf operations %s", len(tf.get_default_graph().get_operations()))
+        logger.info('tf operations %s', len(tf.get_default_graph().get_operations()))
 
 
     @staticmethod
@@ -51,6 +56,13 @@ class Perceptron(object):
             Perceptron.__tensor_cache[(name, obj1, obj2)] = tensor
         return tensor
 
+    
+    def _get_size(self):
+        size = 0
+        for layer in self.layers.values():
+            size += layer.shape.num_elements()
+        return size
+        
 
     def _multilayer_perceptron(self):
         pass
@@ -62,6 +74,8 @@ class Perceptron(object):
 
     # Store layers weight & bias
     def activate(self, inputs):
+        if len(self.story) > 100:
+            self.story = self.story[-10:]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug('activating for input %s' %(str(inputs),))
         outputs = Perceptron._session.run(self.pred, feed_dict={self.x: inputs})
@@ -69,32 +83,106 @@ class Perceptron(object):
 
 
     def copy(self, other):
-        for key in self.weights:
-            Perceptron._get_tensor("copy", self.weights[key], other.weights[key]).eval(session=Perceptron._session)
-        for key in self.biases:
-            Perceptron._get_tensor("copy", self.biases[key], other.biases[key]).eval(session=Perceptron._session)
+        self.story.append('accept copy')
+        for layer in self.layers:
+            Perceptron._get_tensor('copy', self.layers[layer], other.layers[layer]).eval(session=Perceptron._session)
 
 
     def cross(self, other):
-        for key in self.biases:
-            self._cross(self.biases[key], other.biases[key])
-        for key in self.weights:
-            self._cross(self.weights[key], other.weights[key])
+        self.story.append('cross')
+        for layer in self.layers:
+            self._cross(self.layers[layer], other.layers[layer])
 
 
     def _cross(self, own, other):
-        Perceptron._get_tensor("cross", own, other).eval(session=Perceptron._session)
+        Perceptron._get_tensor('cross', own, other).eval(session=Perceptron._session)
 
 
-    def mutate(self, factor=0.2):
-        for key in self.weights:
-            self._mutate(self.weights[key], factor)
-        for key in self.biases:
-            self._mutate(self.biases[key], factor)
+    '''
+    Ein zufälliger Layer mit einem zufälligen Index wird für eine Mutation ausgewählt
+    '''
+    def get_mutation_index(self, generation=None):
+        key = None
+        x = None
+        length = None
+        
+        if generation == None:
+            key, layer = random.choice(list(self.layers.items()))
+            length = layer.shape.num_elements()
+            x = random.randint(0, length-1)
+        else:
+            generation = generation % self.size
+            keys = list(self.layers.keys())
+            keys.sort()
+            for key in keys:
+                layer = self.layers[key]
+                length = layer.shape.num_elements()
+                if length <= generation:
+                    generation -= length
+                else:
+                    x = generation
+                    break
+
+        return {'layer':key, 'pos':x, 'length': length}
+
+
+    def learn(self, input, output):
+        ph = Perceptron._get_tensor('placeholder', self.pred, factor=(1, self.n_output))
+        train_op = Perceptron._get_tensor('learn', self.pred, ph, 0.01)
+        Perceptron._session.run(train_op, feed_dict={self.x: input, ph: output})
+
+
+    '''
+    Addiert value zum Layer auf den index verweist
+    '''
+    def mutate_index(self, index, value):
+        self.story.append('mutate index')
+        layer = self.layers[index['layer']]
+        length = index['length']
+        a = [.0] * length
+        a[index['pos']] = value
+
+        p = Perceptron._get_tensor('placeholder', length, factor=(1, length))
+        op = Perceptron._get_tensor('mutate_layer', layer, p, layer.shape)
+
+        return Perceptron._session.run(op, {p:[a]})
+
+
+    def mutate_heavy(self, factor=0.2):
+        self.story.append('mutate heavy')
+        for layer in self.layers:
+            self._mutate(self.layers[layer], factor)
+
+
+    def mutate_layer(self, factor=0.2):
+        key, layer = random.choice(list(self.layers.items()))
+        self.story.append('mutate layer %s' % key)
+        self._mutate_layer(key, layer, factor)
+
+
+    def mutate_all_layers(self, factor=0.2):
+        self.story.append('mutate layers')
+        for key, layer in self.layers.items():
+            self._mutate_layer(key, layer, factor)
+
+
+    """
+    mutate only a random amount of entries
+    """
+    def _mutate_layer(self, key, layer, factor=0.2):
+        length = layer.shape.num_elements()
+        a = [.0] * length
+        for _ in range(random.randint(1, len(a) - 1)):
+            a[random.randint(0, len(a) - 1)] = random.random() * factor * 2 - factor
+
+        p = Perceptron._get_tensor('placeholder', length, factor=(1, length))
+        op = Perceptron._get_tensor('mutate_layer', layer, p, layer.shape)
+
+        return Perceptron._session.run(op, {p:[a]})
 
 
     def _mutate(self, layer, factor):
-        Perceptron._get_tensor("mutate", layer, factor=factor).eval(session=self._session)
+        Perceptron._get_tensor('mutate', layer, factor=factor).eval(session=self._session)
 
 
     def __unicode__(self):
@@ -110,17 +198,14 @@ class Perceptron_1Layer(Perceptron):
      # Create model
     def _multilayer_perceptron(self):
 
-        self.weights = {
-            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_output]))
-        }
-        self.biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'out': tf.Variable(tf.random_normal([self.n_output]))
-        }
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['output'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_output]))
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.weights['out']), self.biases['out']))
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['ob']))
+
         return out
 
 class Perceptron_2Layer(Perceptron):
@@ -133,21 +218,20 @@ class Perceptron_2Layer(Perceptron):
     # Create model
     def _multilayer_perceptron(self):
 
-        self.weights = {
-            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
-        }
-        self.biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'out': tf.Variable(tf.random_normal([self.n_output]))
-        }
-
-        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
-        out = tf.add(tf.matmul(layer_2,  self.weights['out']), self.biases['out'])
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['h2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['output'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
         
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
+
+        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
+        out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['ob'])
+        
+        return out
+
 class Perceptron_5Layer(Perceptron):
 
     def __init__(self, n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_hidden_4, n_hidden_5, n_output):
@@ -161,29 +245,53 @@ class Perceptron_5Layer(Perceptron):
     # Create model
     def _multilayer_perceptron(self):
 
-        self.weights = {
-            'h1': tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
-            'h4': tf.Variable(tf.random_normal([self.n_hidden_3, self.n_hidden_4])),
-            'h5': tf.Variable(tf.random_normal([self.n_hidden_4, self.n_hidden_5])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_5, self.n_output]))
-        }
-        self.biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
-            'b4': tf.Variable(tf.random_normal([self.n_hidden_4])),
-            'b5': tf.Variable(tf.random_normal([self.n_hidden_5])),
-            'out': tf.Variable(tf.random_normal([self.n_output]))
-        }
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['h2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['h3'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3]))
+        self.layers['h4'] = tf.Variable(tf.random_normal([self.n_hidden_3, self.n_hidden_4]))
+        self.layers['h5'] = tf.Variable(tf.random_normal([self.n_hidden_4, self.n_hidden_5]))
+        self.layers['out'] = tf.Variable(tf.random_normal([self.n_hidden_5, self.n_output]))
+ 
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+        self.layers['b3'] = tf.Variable(tf.random_normal([self.n_hidden_3]))
+        self.layers['b4'] = tf.Variable(tf.random_normal([self.n_hidden_4]))
+        self.layers['b5'] = tf.Variable(tf.random_normal([self.n_hidden_5]))
+        self.layers['out'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.tanh(tf.add(tf.matmul(self.x, self.weights['h1']), self.biases['b1']))
-        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.weights['h2']), self.biases['b2']))
-        layer_3 =  tf.tanh(tf.add(tf.matmul(layer_2, self.weights['h3']), self.biases['b3']))
-        layer_4 =  tf.tanh(tf.add(tf.matmul(layer_3, self.weights['h4']), self.biases['b4']))
-        layer_5 =  tf.tanh(tf.add(tf.matmul(layer_4, self.weights['h5']), self.biases['b5']))
-        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.weights['out']), self.biases['out']))
-
+        layer_1 = tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_2 = tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
+        layer_3 = tf.tanh(tf.add(tf.matmul(layer_2, self.layers['h3']), self.layers['b3']))
+        layer_4 = tf.tanh(tf.add(tf.matmul(layer_3, self.layers['h4']), self.layers['b4']))
+        layer_5 = tf.tanh(tf.add(tf.matmul(layer_4, self.layers['h5']), self.layers['b5']))
+        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.layers['out']), self.layers['out']))
+        
         return out
 
+'''
+Recurrent Neural Network
+Der Input bleibt als Durchschnitt mit dem letzten Input bestehen.
+Damit kann das Netz theoretisch anhand der Fließkommazahl feststellen, 
+wie lange die letze 1 her ist.
+'''
+class Perceptron_RNN(Perceptron):
+
+    def __init__(self, n_input, n_hidden_1, n_output):
+        self.n_hidden_1 = n_hidden_1
+        Perceptron.__init__(self, n_input, n_output)
+
+
+     # Create model
+    def _multilayer_perceptron(self):
+
+        self.layers['input_mem'] = tf.Variable(tf.zeros([1, self.n_input]))
+        self.layers['weights1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['output'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_output]))
+        self.layers['bias1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['outputbias'] = tf.Variable(tf.random_normal([self.n_output]))
+
+        mem = tf.assign(self.layers['input_mem'], tf.div(tf.add(self.x, self.layers['input_mem']), 2))
+        layer_1 =  tf.nn.relu(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
+        out = tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['outputbias'])
+
+        return out
