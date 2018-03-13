@@ -236,9 +236,44 @@ class Perceptron_2Layer(Perceptron):
         layer_1 =  tf.nn.relu(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
         layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
         out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['ob'])
-
+        
         return out
 
+class Perceptron_5Layer(Perceptron):
+
+    def __init__(self, n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_hidden_4, n_hidden_5, n_output):
+        self.n_hidden_1 = n_hidden_1
+        self.n_hidden_2 = n_hidden_2
+        self.n_hidden_3 = n_hidden_3
+        self.n_hidden_4 = n_hidden_4
+        self.n_hidden_5 = n_hidden_5
+        Perceptron.__init__(self,n_input, n_output)
+
+    # Create model
+    def _multilayer_perceptron(self):
+
+        self.layers['h1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['h2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['h3'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3]))
+        self.layers['h4'] = tf.Variable(tf.random_normal([self.n_hidden_3, self.n_hidden_4]))
+        self.layers['h5'] = tf.Variable(tf.random_normal([self.n_hidden_4, self.n_hidden_5]))
+        self.layers['out'] = tf.Variable(tf.random_normal([self.n_hidden_5, self.n_output]))
+ 
+        self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+        self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+        self.layers['b3'] = tf.Variable(tf.random_normal([self.n_hidden_3]))
+        self.layers['b4'] = tf.Variable(tf.random_normal([self.n_hidden_4]))
+        self.layers['b5'] = tf.Variable(tf.random_normal([self.n_hidden_5]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
+
+        layer_1 = tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_2 = tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
+        layer_3 = tf.tanh(tf.add(tf.matmul(layer_2, self.layers['h3']), self.layers['b3']))
+        layer_4 = tf.tanh(tf.add(tf.matmul(layer_3, self.layers['h4']), self.layers['b4']))
+        layer_5 = tf.tanh(tf.add(tf.matmul(layer_4, self.layers['h5']), self.layers['b5']))
+        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.layers['out']), self.layers['ob']))
+        
+        return out
 
 '''
 Recurrent Neural Network
@@ -265,5 +300,47 @@ class Perceptron_RNN(Perceptron):
         mem = tf.assign(self.layers['input_mem'], tf.div(tf.add(self.x, self.layers['input_mem']), 2))
         layer_1 =  tf.nn.relu(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
         out = tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['outputbias'])
+
+        return out
+
+
+'''
+Recurrent Neural Network
+Der Input bleibt als Durchschnitt mit dem letzten Input bestehen.
+Damit kann das Netz theoretisch anhand der Fließkommazahl feststellen, 
+wie lange die letze 1 her ist.
+'''
+class Perceptron_RNN_2Layer(Perceptron):
+
+    def __init__(self, n_input, n_hidden_1, n_hidden_2, n_output):
+        self.n_hidden_1 = n_hidden_1
+        self.n_hidden_2 = n_hidden_2
+        Perceptron.__init__(self, n_input, n_output)
+
+
+     # Create model
+    def _multilayer_perceptron(self):
+
+        self.layers['input_mem'] = tf.Variable(tf.zeros([1, self.n_input]))
+
+        self.layers['weights1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['bias1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+
+        self.layers['mem1'] = tf.Variable(tf.zeros([self.n_input, self.n_hidden_1]))
+
+        self.layers['weights2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['bias2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+
+        self.layers['output'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
+        self.layers['outputbias'] = tf.Variable(tf.random_normal([self.n_output]))
+
+
+        mem = tf.assign(self.layers['input_mem'], tf.div(tf.add(self.x, self.layers['input_mem']), 2))
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
+
+        mem1 = tf.assign(self.layers['mem1'], tf.div(tf.add( layer_1, self.layers['mem1']), 2))
+        layer_2 =  tf.sigmoid(tf.add(tf.matmul(mem1, self.layers['weights2']), self.layers['bias2']))
+
+        out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['outputbias'])
 
         return out
