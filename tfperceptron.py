@@ -23,7 +23,8 @@ class Perceptron(object):
         'mutate': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.random_uniform(shape=obj1.shape, minval=factor*-1, maxval=factor))),
         'mutate_layer': lambda obj1, obj2, factor: tf.assign(obj1, tf.add(obj1, tf.reshape(obj2, factor))),
         'placeholder': lambda obj1, obj2, factor: tf.placeholder('float32', factor),
-        'learn': lambda obj1, obj2, factor: tf.train.GradientDescentOptimizer(factor).minimize(tf.abs(obj2 - obj1))
+        'loss': lambda obj1, obj2, factor: tf.abs(obj2 - obj1),
+        'learn': lambda obj1, obj2, factor: tf.train.AdamOptimizer(learning_rate=factor, beta1=0.9, beta2=0.999,).minimize(obj1)
     }
 
 
@@ -34,6 +35,11 @@ class Perceptron(object):
         self.x = tf.placeholder('float', [None, self.n_input])
         self.layers = {}
         self.pred = self._multilayer_perceptron()
+
+        self.ph = Perceptron._get_tensor('placeholder', self.pred, factor=(None, self.n_output))
+        self.loss_op = Perceptron._get_tensor('loss', self.pred, self.ph)
+        self.train_op = Perceptron._get_tensor('learn', self.loss_op, self.pred, 0.001)
+
         self.size = self._get_size()
         self.story = []
         self.input = []
@@ -83,8 +89,8 @@ class Perceptron(object):
 
         outputs = Perceptron._session.run(self.pred, feed_dict={self.x: inputs})
 
-        self.input.append(inputs)
-        self.output.append(outputs)
+        self.input.append(inputs[0])
+        self.output.append(outputs[0])
 
         return outputs
 
@@ -134,11 +140,8 @@ class Perceptron(object):
 
 
     def learn(self, input, output):
-        ph = Perceptron._get_tensor('placeholder', self.pred, factor=(1, self.n_output))
-        train_op = Perceptron._get_tensor('learn', self.pred, ph, 0.1)
-        Perceptron._session.run(train_op, feed_dict={self.x: input, ph: output})
-
-
+        Perceptron._session.run(self.train_op, feed_dict={self.x: input, self.ph: output})
+        
     '''
     Addiert value zum Layer auf den index verweist
     '''

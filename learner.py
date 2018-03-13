@@ -103,7 +103,7 @@ class Learner(object):
         # all loosers get mutated
         for genome in self.genomes[self.selection:]:
             factor = genome.fitness * self.mutationProb
-            genome.mutate_layer(factor=factor)
+            genome.mutate_all_layers(factor=factor)
 
 
     def _train(self):
@@ -112,8 +112,8 @@ class Learner(object):
 
         for genome in self.genomes[self.selection:]:
             master = random.choice(self.genomes[:self.selection])
-            for i in range(100):
-                genome.learn(master.input[i], master.output[i])
+            for _ in range (100):
+                genome.learn(master.input, master.output)
 
     def _log_fitness(self):
         f = []
