@@ -213,8 +213,8 @@ class Perceptron_1Layer(Perceptron):
         self.layers['b1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
         self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
-        out = tf.sigmoid(tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['ob']))
+        layer_1 =  tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1'])
+        out = tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['ob'])
 
         return out
 
@@ -236,8 +236,8 @@ class Perceptron_2Layer(Perceptron):
         self.layers['b2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
         self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
-        layer_1 =  tf.nn.relu(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
-        layer_2 =  tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
+        layer_2 =  tf.sigmoid(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
         out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['ob'])
         
         return out
