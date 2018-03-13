@@ -295,3 +295,45 @@ class Perceptron_RNN(Perceptron):
         out = tf.add(tf.matmul(layer_1,  self.layers['output']), self.layers['outputbias'])
 
         return out
+
+
+'''
+Recurrent Neural Network
+Der Input bleibt als Durchschnitt mit dem letzten Input bestehen.
+Damit kann das Netz theoretisch anhand der Fließkommazahl feststellen, 
+wie lange die letze 1 her ist.
+'''
+class Perceptron_RNN_2Layer(Perceptron):
+
+    def __init__(self, n_input, n_hidden_1, n_hidden_2, n_output):
+        self.n_hidden_1 = n_hidden_1
+        self.n_hidden_2 = n_hidden_2
+        Perceptron.__init__(self, n_input, n_output)
+
+
+     # Create model
+    def _multilayer_perceptron(self):
+
+        self.layers['input_mem'] = tf.Variable(tf.zeros([1, self.n_input]))
+
+        self.layers['weights1'] = tf.Variable(tf.random_normal([self.n_input, self.n_hidden_1]))
+        self.layers['bias1'] = tf.Variable(tf.random_normal([self.n_hidden_1]))
+
+        self.layers['mem1'] = tf.Variable(tf.zeros([self.n_input, self.n_hidden_1]))
+
+        self.layers['weights2'] = tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2]))
+        self.layers['bias2'] = tf.Variable(tf.random_normal([self.n_hidden_2]))
+
+        self.layers['output'] = tf.Variable(tf.random_normal([self.n_hidden_2, self.n_output]))
+        self.layers['outputbias'] = tf.Variable(tf.random_normal([self.n_output]))
+
+
+        mem = tf.assign(self.layers['input_mem'], tf.div(tf.add(self.x, self.layers['input_mem']), 2))
+        layer_1 =  tf.sigmoid(tf.add(tf.matmul(mem, self.layers['weights1']), self.layers['bias1']))
+
+        mem1 = tf.assign(self.layers['mem1'], tf.div(tf.add( layer_1, self.layers['mem1']), 2))
+        layer_2 =  tf.sigmoid(tf.add(tf.matmul(mem1, self.layers['weights2']), self.layers['bias2']))
+
+        out = tf.add(tf.matmul(layer_2,  self.layers['output']), self.layers['outputbias'])
+
+        return out
