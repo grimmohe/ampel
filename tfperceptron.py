@@ -257,14 +257,14 @@ class Perceptron_5Layer(Perceptron):
         self.layers['b3'] = tf.Variable(tf.random_normal([self.n_hidden_3]))
         self.layers['b4'] = tf.Variable(tf.random_normal([self.n_hidden_4]))
         self.layers['b5'] = tf.Variable(tf.random_normal([self.n_hidden_5]))
-        self.layers['out'] = tf.Variable(tf.random_normal([self.n_output]))
+        self.layers['ob'] = tf.Variable(tf.random_normal([self.n_output]))
 
         layer_1 = tf.tanh(tf.add(tf.matmul(self.x, self.layers['h1']), self.layers['b1']))
         layer_2 = tf.tanh(tf.add(tf.matmul(layer_1, self.layers['h2']), self.layers['b2']))
         layer_3 = tf.tanh(tf.add(tf.matmul(layer_2, self.layers['h3']), self.layers['b3']))
         layer_4 = tf.tanh(tf.add(tf.matmul(layer_3, self.layers['h4']), self.layers['b4']))
         layer_5 = tf.tanh(tf.add(tf.matmul(layer_4, self.layers['h5']), self.layers['b5']))
-        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.layers['out']), self.layers['out']))
+        out = tf.tanh(tf.add(tf.matmul(layer_5,  self.layers['out']), self.layers['ob']))
         
         return out
 
