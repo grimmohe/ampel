@@ -23,18 +23,6 @@ class Learner(object):
         self.mutationProb = mutationProb
         self.interuptted = False
         self.traffic_sim_mem_depth = 15
-        self.best_lights_308_in = []
-        self.best_lights_308_out = []
-
-        v = verkehr.Verkehr(self.traffic_sim_mem_depth)
-        v.setup()
-        for i in range(100):
-            lights = [i%3%2, i%3%2, i%4%2, i%4%2, i%6%2, i%7%2, i%8%2]
-            print(lights)
-            out = v.step(lights=lights)
-            self.best_lights_308_out.append(lights)
-            self.best_lights_308_in.append(out)
-        print(v.cost)
 
     """
     Build genomes before calling executeGeneration.
@@ -124,9 +112,6 @@ class Learner(object):
         for genome in self.genomes[self.selection:]:
             master = random.choice(self.genomes[:self.selection])
             genome.learn(master.input, master.output)
-
-        for _ in range (100):
-            self.genomes[0].learn(self.best_lights_308_in, self.best_lights_308_out)
 
     def _log_fitness(self):
         f = []
