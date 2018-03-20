@@ -123,8 +123,7 @@ class Learner(object):
 
         for genome in self.genomes[self.selection:]:
             master = random.choice(self.genomes[:self.selection])
-            for _ in range (100):
-                genome.learn(master.input, master.output)
+            genome.learn(master.input, master.output)
 
         for _ in range (100):
             self.genomes[0].learn(self.best_lights_308_in, self.best_lights_308_out)
