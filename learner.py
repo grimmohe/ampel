@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 import logging
 import random
-from tfperceptron import Perceptron_2Layer as Perceptron
+from tfperceptron import Perceptron_1Layer as Perceptron
 import time
 from env import verkehr
 import gc
@@ -23,7 +23,18 @@ class Learner(object):
         self.mutationProb = mutationProb
         self.interuptted = False
         self.traffic_sim_mem_depth = 15
-        
+        self.best_lights_308_in = []
+        self.best_lights_308_out = []
+
+        v = verkehr.Verkehr(self.traffic_sim_mem_depth)
+        v.setup()
+        for i in range(100):
+            lights = [i%3%2, i%3%2, i%4%2, i%4%2, i%6%2, i%7%2, i%8%2]
+            print(lights)
+            out = v.step(lights=lights)
+            self.best_lights_308_out.append(lights)
+            self.best_lights_308_in.append(out)
+        print(v.cost)
 
     """
     Build genomes before calling executeGeneration.
@@ -115,6 +126,9 @@ class Learner(object):
             for _ in range (100):
                 genome.learn(master.input, master.output)
 
+        for _ in range (100):
+            self.genomes[0].learn(self.best_lights_308_in, self.best_lights_308_out)
+
     def _log_fitness(self):
         f = []
         for g in self.genomes:
@@ -164,7 +178,7 @@ class Learner(object):
     def _buildGenome(self, inputs, outputs):
         logger.debug('Build genome %d' %(len(self.genomes)+1,))
         #Intialize one genome network with one layer perceptron
-        network = Perceptron(inputs, 1400, 124, outputs)
+        network = Perceptron(inputs, 50, outputs)
 
         logger.debug('Build genome %d done' %(len(self.genomes)+1))
         return network
