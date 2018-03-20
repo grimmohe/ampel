@@ -25,8 +25,6 @@ class Learner(object):
         self.traffic_sim_mem_depth = 15
         self.traffic_sim_num_cars = 1
         self.traffic_sim_num_iterations = 100
-        self.best_lights_308_in = []
-        self.best_lights_308_out = []
 
 
     """
