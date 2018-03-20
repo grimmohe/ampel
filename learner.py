@@ -23,18 +23,11 @@ class Learner(object):
         self.mutationProb = mutationProb
         self.interuptted = False
         self.traffic_sim_mem_depth = 15
+        self.traffic_sim_num_cars = 1
+        self.traffic_sim_num_iterations = 100
         self.best_lights_308_in = []
         self.best_lights_308_out = []
 
-        v = verkehr.Verkehr(self.traffic_sim_mem_depth)
-        v.setup()
-        for i in range(100):
-            lights = [i%3%2, i%3%2, i%4%2, i%4%2, i%6%2, i%7%2, i%8%2]
-            print(lights)
-            out = v.step(lights=lights)
-            self.best_lights_308_out.append(lights)
-            self.best_lights_308_in.append(out)
-        print(v.cost)
 
     """
     Build genomes before calling executeGeneration.
@@ -75,12 +68,15 @@ class Learner(object):
 
         self._executeGenomes()
 
-        if self.generation < 3 or self.generation % 5 == 0:
+        if self.generation < 3 or self.generation % 3 == 0:
             self._genify_random_all()
         else:
             self._train()
 
         self._log_fitness()
+
+        if self.genomes[0].fitness < self.traffic_sim_num_cars * 2.5:
+            self.traffic_sim_num_cars += 1
         
         logger.debug('Completed generation %d' %(self.generation,))
 
@@ -113,7 +109,7 @@ class Learner(object):
             genome.cross(random.choice(bestGenomes))
         # all loosers get mutated
         for genome in self.genomes[self.selection:]:
-            factor = genome.fitness * self.mutationProb
+            factor = genome.fitness * self.mutationProb / self.traffic_sim_num_cars
             genome.mutate_all_layers(factor=factor)
 
 
@@ -125,14 +121,12 @@ class Learner(object):
             master = random.choice(self.genomes[:self.selection])
             genome.learn(master.input, master.output)
 
-        for _ in range (100):
-            self.genomes[0].learn(self.best_lights_308_in, self.best_lights_308_out)
 
     def _log_fitness(self):
         f = []
         for g in self.genomes:
             f.append(g.fitness)
-        logger.info('Generation %s fitness: %s', self.generation, f)
+        logger.info('Generation %s cars %s fitness: %s', self.generation, self.traffic_sim_num_cars, f)
 
 
     """
@@ -143,19 +137,19 @@ class Learner(object):
     3) When the game has ended and compute the fitness
     """
     def _executeGenomes(self): 
-        genomes = self.genomes[self.selection:]
+        genomes = self.genomes
         traffic = []
         result = []
 
         for g in genomes:
             v = verkehr.Verkehr(self.traffic_sim_mem_depth)
-            v.setup()
+            v.setup(self.traffic_sim_num_cars)
             traffic.append(v)
             g.input.clear() #parameter für genome
             g.output.clear() #ergebnis des netzes
             result.append([0] * 7) #aufbereitetes ergebnis
 
-        for _ in range(100):
+        for _ in range(self.traffic_sim_num_iterations):
             for g in range(len(genomes)):
                 input = traffic[g].step(lights=result[g])
                 output = genomes[g].activate([input])
