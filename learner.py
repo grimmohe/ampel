@@ -26,6 +26,12 @@ class Learner(object):
         self.traffic_sim_num_cars = 1
         self.traffic_sim_num_iterations = 100
 
+        # Build genomes if needed
+        while (len(self.genomes) < self.genomeUnits):
+            self.genomes.append(self._buildGenome(44 * self.traffic_sim_mem_depth, 7))
+        
+        Perceptron.init()
+
 
     """
     Build genomes before calling executeGeneration.
@@ -33,12 +39,6 @@ class Learner(object):
     def startLearning(self):
 
         try:
-
-            # Build genomes if needed
-            while (len(self.genomes) < self.genomeUnits):
-                self.genomes.append(self._buildGenome(44 * self.traffic_sim_mem_depth, 7))
-
-            Perceptron.init()
     
             logger.debug('Build genomes done')
             
@@ -46,7 +46,7 @@ class Learner(object):
                 self._executeGeneration()
 
         except KeyboardInterrupt:
-            pass
+            Perceptron.saveTensor()
 
         
 
