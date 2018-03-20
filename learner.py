@@ -73,7 +73,7 @@ class Learner(object):
 
         self._log_fitness()
 
-        if self.genomes[0].fitness < self.traffic_sim_num_cars * 2.5:
+        if self.genomes[0].fitness < self.traffic_sim_num_cars * self.traffic_sim_num_cars:
             self.traffic_sim_num_cars += 1
         
         logger.debug('Completed generation %d' %(self.generation,))
@@ -135,31 +135,36 @@ class Learner(object):
     3) When the game has ended and compute the fitness
     """
     def _executeGenomes(self): 
-        genomes = self.genomes
-        traffic = []
         result = []
 
-        for g in genomes:
+        traffic = []    
+        
+        for g in self.genomes:
             v = verkehr.Verkehr(self.traffic_sim_mem_depth)
-            v.setup(self.traffic_sim_num_cars)
             traffic.append(v)
             g.input.clear() #parameter für genome
             g.output.clear() #ergebnis des netzes
             result.append([0] * 7) #aufbereitetes ergebnis
 
-        for _ in range(self.traffic_sim_num_iterations):
-            for g in range(len(genomes)):
-                input = traffic[g].step(lights=result[g])
-                output = genomes[g].activate([input])
+        for cars in range(self.traffic_sim_num_cars):
+            cars += 1
 
-                result[g].clear()
-                for out in output[0]:
-                    if (out < 0):
-                        result[g].append(0)
-                    else:
-                        result[g].append(1)
+            for g in range(len(self.genomes)):
+                traffic[g].setup(cars)
 
-                genomes[g].set_fitness(traffic[g].get_cost())
+            for _ in range(self.traffic_sim_num_iterations):
+                for g in range(len(self.genomes)):
+                    input = traffic[g].step(lights=result[g])
+                    output = self.genomes[g].activate([input])
+
+                    result[g].clear()
+                    for out in output[0]:
+                        if (out < 0):
+                            result[g].append(0)
+                        else:
+                            result[g].append(1)
+
+                    self.genomes[g].set_fitness(traffic[g].get_cost())
 
 
     """
