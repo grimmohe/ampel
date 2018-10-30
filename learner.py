@@ -117,7 +117,7 @@ class Learner(object):
 
         for genome in self.genomes[self.selection:]:
             master = random.choice(self.genomes[:self.selection])
-            genome.learn(master.input, master.output)
+            genome.learn(master.input, master.output, 100)
 
 
     def _log_fitness(self):

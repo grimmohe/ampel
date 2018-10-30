@@ -139,8 +139,8 @@ class Perceptron(object):
         return {'layer':key, 'pos':x, 'length': length}
 
 
-    def learn(self, input, output):
-        Perceptron._session.run(self.train_op, feed_dict={self.x: input * 100, self.ph: output * 100})
+    def learn(self, input, output, iterations):
+        Perceptron._session.run(self.train_op, feed_dict={self.x: input * iterations, self.ph: output * iterations})
         
     '''
     Addiert value zum Layer auf den index verweist
