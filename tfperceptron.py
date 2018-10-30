@@ -10,6 +10,7 @@ import sys
 logger = logging.getLogger('percp')
 import time
 import random
+import datetime
 
 
 class Perceptron(object):
@@ -63,6 +64,16 @@ class Perceptron(object):
             tensor = Perceptron._ops[name](obj1, obj2, factor)
             Perceptron.__tensor_cache[(name, obj1, obj2)] = tensor
         return tensor
+
+
+    @staticmethod
+    def loadTensor(file):
+        tf.train.Saver().restore(Perceptron._session, file)
+
+
+    @staticmethod
+    def saveTensor():
+        tf.train.Saver().save(Perceptron._session, './saves/%s.dump'%datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
 
     
     def _get_size(self):
