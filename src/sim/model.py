@@ -13,8 +13,9 @@ class Model(object):
 """
 """
 class Street(object):
-    def __init__(self, id, dest, dist):
+    def __init__(self, id, source, dest, dist):
         self.id = id
+        self.source = source
         self.destination = dest
         self.distance = dist
 
@@ -32,3 +33,9 @@ class Car(object):
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+"""
+"""
+class Crossing(object):
+    def __init__(self):
+        pass
