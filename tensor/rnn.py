@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
-from model import _Event
+from tensor.model import Event
 
 class RNN(object):
 
@@ -51,7 +51,7 @@ class RNN(object):
         return output
 
 
-    def train_neural_network(self, event=_Event()):
+    def train_neural_network(self, event=Event()):
         print(type(self.x))
         _, c = self.sess.run(self.prediction, feed_dict={self.x: [
             [

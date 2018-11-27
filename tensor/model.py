@@ -6,9 +6,9 @@ class Event(object):
 
     def __init__(self):
         self.distance = sys.float_info.max
-        self.carId = 0
-        self.streetId = 0
-        self.destinantionId = 0
+        self.carId = 0.
+        self.streetId = 0.
+        self.destinantionId = 0.
 
 """
 """
