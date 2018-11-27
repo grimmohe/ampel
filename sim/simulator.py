@@ -1,6 +1,6 @@
 import time
-import sys
 from sim.model import Car, Street, Model
+from tensor.model import Action, Event
 
 """
 """
@@ -39,7 +39,7 @@ class Simulator(object):
 
 
     def _getNextEvent(self):
-        next = _Event()
+        next = Event()
 
         for car in self.model.cars:
             if car.distance < next.distance:
@@ -56,11 +56,3 @@ class Simulator(object):
     def _applyAction(self, action):
         pass
 
-
-class _Event(object):
-
-    def __init__(self):
-        self.distance = sys.float_info.max
-        self.carId = 0.
-        self.streetId = 0.
-        self.destinantionId = 0.

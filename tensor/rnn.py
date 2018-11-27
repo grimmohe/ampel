@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
-from sim.simulator import _Event
+from model import _Event
 
 class RNN(object):
 
