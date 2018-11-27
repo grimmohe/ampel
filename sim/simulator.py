@@ -43,9 +43,9 @@ class Simulator(object):
 
         for car in self.model.cars:
             if car.distance < next.distance:
-                next.carId = car.carId
+                next.id = car.id
                 next.streetId = car.streetId
-                next.destinantionId = car.destinantionId
+                next.destinationId = car.destinationId
                 next.distance = car.distance
 
         return next
