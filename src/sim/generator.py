@@ -1,4 +1,4 @@
-from sim.model import Model, Street, Car
+from sim.model import Model, Street, Car, Crossing
 import random
 import math
 
@@ -16,7 +16,7 @@ class Generator:
 
         for nodeId in range(numNodes):
             connected = [nodeId]
-            for _ in range(self._getNextFactor(2)+2):
+            for _ in range(self._getNextFactor(1)+3):
                 time = minTravelTime + self._getNextFactor(maxTravelTime - minTravelTime)
 
                 target = nodeId
@@ -26,7 +26,35 @@ class Generator:
                 targeted.append(target)
 
                 model.streets.append(Street(streetId, nodeId, target, time))
-                streetId+=1
+                streetId += 1
+
+        for nodeId in range(numNodes):
+            destinations = [s.destination for s in model.streets if s.source == nodeId]
+            distances = []
+
+            for destination1 in destinations:
+                max = {'source': destination1, 'destination': 0, 'distance': 0}
+                for destination2 in [d for d in destinations if d != destination1]:
+                    d = self._getDistance(destination1, destination2, nodeId)
+                    if d > max['distance']:
+                        max['destination'] = destination2
+                        max['distance'] = d
+
+                distances.append(max)
+
+            distances.sort(key=lambda x: x['distance'], reverse=True)
+
+            crossing1 = Crossing(nodeId)
+            crossing1.connectingNodes.append(distances[0]['source'])
+            crossing1.connectingNodes.append(distances[0]['destination'])
+
+            leaving = [d for d in destinations if crossing1.connectingNodes.count(d) == 0]
+
+            crossing2 = Crossing(nodeId)
+            crossing2.connectingNodes.append(leaving)
+
+            model.crossings.append(crossing1)
+            model.crossings.append(crossing2)
 
         for carId in range(numCars):
             streetId = self._getNextFactor(numNodes - 1)
@@ -54,3 +82,6 @@ class Generator:
         a = int(self.formId / self._factorCount)
 
         return a % max(1, maxIndex+1)
+
+    def _getDistance(self, fromNode=0, toNode=0, excludeNode=0):
+        return 1
