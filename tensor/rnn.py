@@ -1,12 +1,12 @@
 import tensorflow as tf
 from tensorflow.python.ops import rnn, rnn_cell
-from tensor.model import Event
+from tensor.model import Event, Action
 
 class RNN(object):
 
     def __init__(self):
 
-        self.n_classes = 5
+        self.n_classes = 2
         self.chunk_size = 4
         self.n_chunks = 1
         self.rnn_size = 128
@@ -61,7 +61,7 @@ class RNN(object):
                 [event.distance, event.carId, event.streetId, event.destinantionId]
             ]
         ]})
-        print(_[0])
+        return Action(_[0], _[1])
         #epoch_loss += c
 
         #correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))

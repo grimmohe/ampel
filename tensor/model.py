@@ -14,6 +14,6 @@ class Event(object):
 """
 class Action(object):
 
-    def __init__(self):
-        self.streetId = 0
-        self.destinationId = 0
+    def __init__(self, streetId=0., destinationId=0.):
+        self.streetId = streetId
+        self.destinationId = destinationId
