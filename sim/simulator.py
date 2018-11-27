@@ -77,7 +77,7 @@ class Simulator(object):
             moveTo = car.distance - distance
 
             # dont drive over other cars
-            frontCars = [c for c in self.model.cars if c.streetId == car.streetId and c.destinantionId == car.destinantionId and c != car]
+            frontCars = [c for c in self.model.cars if c.streetId == car.streetId and c.destinationId == car.destinationId and c != car]
             for frontCar in frontCars:
                 if frontCar.distance < car.distance and frontCar.distance + 1 > car.distance:
                     moveTo = frontCar.distance + 1
