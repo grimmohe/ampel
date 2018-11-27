@@ -6,6 +6,7 @@ class Model(object):
     def __init__(self):
         self.streets = []
         self.cars = []
+        self.crossings = []
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__, indent=4)
@@ -37,5 +38,6 @@ class Car(object):
 """
 """
 class Crossing(object):
-    def __init__(self):
-        pass
+    def __init__(self, nodeId):
+        self.nodeId = nodeId
+        self.connectingNodes = []
