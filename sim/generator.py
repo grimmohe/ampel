@@ -5,12 +5,20 @@ import math
 """
 """
 class Generator:
-    def __init__(self, formId = 123456):
+    def __init__(self, formId=123456):
         self.formId = formId
         self._factorCount = 0
 
     def buildModel(self, numNodes=10, minTravelTime=10, maxTravelTime=60, numCars=10):
         model = Model()
+
+        self._buildStreets(model, numNodes, minTravelTime, maxTravelTime)
+        self._buidlCrossings(model, numNodes)
+        self._buildCars(model, numNodes, numCars)
+
+        return model
+
+    def _buildStreets(self, model=Model(), numNodes=0, minTravelTime=0, maxTravelTime=0):
         targeted = []
         streetId = 0
 
@@ -28,6 +36,7 @@ class Generator:
                 model.streets.append(Street(streetId, nodeId, target, time))
                 streetId += 1
 
+    def _buidlCrossings(self, model=Model(), numNodes=0):
         for nodeId in range(numNodes):
             destinations = [s.destination for s in model.streets if s.source == nodeId]
             distances = []
@@ -35,7 +44,7 @@ class Generator:
             for destination1 in destinations:
                 max = {'source': destination1, 'destination': 0, 'distance': 0}
                 for destination2 in [d for d in destinations if d != destination1]:
-                    d = self._getDistance(destination1, destination2, nodeId)
+                    d = self._getDistance(model, destination1, destination2, nodeId)
                     if d > max['distance']:
                         max['destination'] = destination2
                         max['distance'] = d
@@ -51,10 +60,12 @@ class Generator:
             leaving = [d for d in destinations if crossing1.connectingNodes.count(d) == 0]
 
             crossing2 = Crossing(nodeId)
-            crossing2.connectingNodes.append(leaving)
+            crossing2.connectingNodes.extend(leaving)
 
             model.crossings.append(crossing1)
             model.crossings.append(crossing2)
+
+    def _buildCars(self, model=Model(), numNodes=0, numCars=0):
 
         for carId in range(numCars):
             streetId = self._getNextFactor(numNodes - 1)
@@ -71,8 +82,6 @@ class Generator:
                 )
             )
 
-        return model
-
     """
     returns value between 0 and max
     """
@@ -83,5 +92,25 @@ class Generator:
 
         return a % max(1, maxIndex+1)
 
-    def _getDistance(self, fromNode=0, toNode=0, excludeNode=0):
-        return 1
+    def _getDistance(self, model=Model(), fromNode=0, toNode=0, excludeNode=0):
+        routes = {}
+        routes[excludeNode] = []
+        routes[fromNode] = [fromNode]
+        self.__travel(model, routes, fromNode)
+
+        if toNode not in routes:
+            raise "wtf"
+
+        return len(routes[toNode])
+
+    def __travel(self, model, routes, current):
+        route = routes[current]
+        streets = [s for s in model.streets if s.source == current and route.count(s.destination) == 0]
+
+        for street in streets:
+            if street.destination not in routes or len(routes[street.destination]) > len(route) + 1:
+                newRoute = route[:]
+                newRoute.append(street.destination)
+                routes[street.destination] = newRoute
+                self.__travel(model, routes, street.destination)
+
