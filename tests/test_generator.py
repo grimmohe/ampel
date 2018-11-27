@@ -4,7 +4,7 @@ from sim.generator import Generator
 
 class TestGenerator(unittest.TestCase):
 
-    def test_getDistance(self):
+    def setUp(self):
         model = Model()
         model.streets.append(Street(1, 1, 2, 0))
         model.streets.append(Street(2, 1, 3, 0))
@@ -15,9 +15,51 @@ class TestGenerator(unittest.TestCase):
         model.streets.append(Street(7, 4, 6, 0))
         model.streets.append(Street(8, 5, 6, 0))
         model.streets.append(Street(9, 6, 7, 0))
+        self.model = model
 
-        d = Generator()._getDistance(model, 1, 7, 0)
+        #
+        #      1
+        #     / \
+        #    2   3
+        #     \  |
+        #      4 |
+        #     / \|
+        #    5---6
+        #       /
+        #      7
+        #
+
+    def test_getDistance1(self):
+        d = Generator()._getDistance(self.model, 1, 7, 0)
         self.assertEqual(4, d)
 
+    def test_getDistance2(self):
+        d = Generator()._getDistance(self.model, 1, 5, 0)
+        self.assertEqual(4, d)
+
+    def test_getDistance3(self):
+        d = Generator()._getDistance(self.model, 3, 2, 0)
+        self.assertEqual(3, d)
+
+    def test_getDistance4(self):
+        d = Generator()._getDistance(self.model, 4, 7, 0)
+        self.assertEqual(3, d)
+
+    def test_getDistance5(self):
+        d = Generator()._getDistance(self.model, 1, 7, 0)
+        self.assertEqual(4, d)
+
+    def test_getDistance6(self):
+        d = Generator()._getDistance(self.model, 4, 1, 0)
+        self.assertEqual(3, d)
+
+    def test_getDistance6(self):
+        d = Generator()._getDistance(self.model, 4, 5, 0)
+        self.assertEqual(2, d)
+
+    def test_getDistance7(self):
+        d = Generator()._getDistance(self.model, 6, 5, 0)
+        self.assertEqual(2, d)
+        
 if __name__ == '__main__':
     unittest.main()
