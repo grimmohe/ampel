@@ -116,6 +116,8 @@ class Simulator(object):
 
         return False
 
-    def _applyAction(self, action):
-        pass
+    def _applyAction(self, action=Action()):
+        crossings = [c for c in self.model.crossings if c.nodeId == action.destinationId]
 
+        for crossing in crossings:
+            crossing.green = (crossing.connectingNodes.count(action.streetId) == 1)
