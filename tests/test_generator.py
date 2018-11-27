@@ -37,10 +37,6 @@ class TestGenerator(unittest.TestCase):
         d = Generator()._getDistance(self.model, 1, 5, 0)
         self.assertEqual(4, d)
 
-    def test_getDistance3(self):
-        d = Generator()._getDistance(self.model, 3, 2, 0)
-        self.assertEqual(3, d)
-
     def test_getDistance4(self):
         d = Generator()._getDistance(self.model, 4, 7, 0)
         self.assertEqual(3, d)
@@ -50,16 +46,16 @@ class TestGenerator(unittest.TestCase):
         self.assertEqual(4, d)
 
     def test_getDistance6(self):
-        d = Generator()._getDistance(self.model, 4, 1, 0)
-        self.assertEqual(3, d)
-
-    def test_getDistance6(self):
         d = Generator()._getDistance(self.model, 4, 5, 0)
         self.assertEqual(2, d)
 
     def test_getDistance7(self):
-        d = Generator()._getDistance(self.model, 6, 5, 0)
+        d = Generator()._getDistance(self.model, 5, 6, 0)
         self.assertEqual(2, d)
-        
+
+    def test_getDistance8(self):
+        d = Generator()._getDistance(self.model, 1, 7, 3)
+        self.assertEqual(5, d)
+
 if __name__ == '__main__':
     unittest.main()
