@@ -24,12 +24,12 @@ class Generator:
 
         for nodeId in range(numNodes):
             connected = [nodeId]
-            for _ in range(self._getNextFactor(1)+3):
-                time = minTravelTime + self._getNextFactor(maxTravelTime - minTravelTime)
+            for _ in range(self.getNextFactor(1)+3):
+                time = minTravelTime + self.getNextFactor(maxTravelTime - minTravelTime)
 
                 target = nodeId
                 while connected.count(target) > 0 or targeted.count(target) > 3:
-                    target = self._getNextFactor(numNodes - 1)
+                    target = self.getNextFactor(numNodes - 1)
                 connected.append(target)
                 targeted.append(target)
 
@@ -68,24 +68,24 @@ class Generator:
     def _buildCars(self, model=Model(), numNodes=0, numCars=0):
 
         for carId in range(numCars):
-            streetId = self._getNextFactor(numNodes - 1)
+            streetId = self.getNextFactor(numNodes - 1)
 
             possibleDestinations = [s for s in model.streets if s.id == streetId]
-            destination = possibleDestinations[self._getNextFactor(len(possibleDestinations) - 1)]
+            destination = possibleDestinations[self.getNextFactor(len(possibleDestinations) - 1)]
 
             model.cars.append(
                 Car(
                     carId,
                     destination.id,
                     destination.destination,
-                    self._getNextFactor(destination.distance) + carId / 10000.0
+                    self.getNextFactor(destination.distance) + carId / 10000.0
                 )
             )
 
     """
     returns value between 0 and max
     """
-    def _getNextFactor(self, maxIndex = 1):
+    def getNextFactor(self, maxIndex = 1):
         self._factorCount += 1
 
         a = int(self.formId / self._factorCount)

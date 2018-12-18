@@ -40,4 +40,5 @@ class Car(object):
 class Crossing(object):
     def __init__(self, nodeId):
         self.nodeId = nodeId
+        self.green = False
         self.connectingNodes = []

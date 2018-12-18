@@ -18,7 +18,7 @@ class RNN(object):
         self.x = tf.placeholder('float', [None, self.n_chunks, self.chunk_size])
 
         self.prediction = self.recurrent_neural_network(self.x)
-        
+
         config = tf.ConfigProto(
             device_count = {'GPU': 0}
         )
@@ -45,10 +45,10 @@ class RNN(object):
     def train_neural_network(self, event=Event()):
         _, c = self.sess.run(self.prediction, feed_dict={self.x: [
             [
-                [event.distance, event.carId, event.streetId, event.destinantionId]
+                [event.distance, event.carId, event.streetId, event.destinationId]
             ],
             [
-                [event.distance, event.carId, event.streetId, event.destinantionId]
+                [event.distance, event.carId, event.streetId, event.destinationId]
             ]
         ]})
         return Action(_[0], _[1])
