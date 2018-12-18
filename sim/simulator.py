@@ -26,12 +26,8 @@ class Simulator(object):
     """
     def step(self, callbackMethod):
         event = self._getNextEvent()
-
-        timestamp = time.time()
-
         action = callbackMethod(event)
 
-        self._moveCars(time.time() - timestamp)
         self._applyAction(action)
 
     def _getNextEvent(self):
@@ -98,20 +94,22 @@ class Simulator(object):
                 # wait for red lights
                 else:
                     e.streetId = car.streetId
-                    e.destinantionId = car.destinantionId
+                    e.destinationId = car.destinationId
                     e.distance = 0
+
+                    self.error += 1
 
             else:
                 car.distance = moveTo
 
     def getNextDestination(self, car):
-        streets = [s for s in self.model.streets if s.source == car.destinantionId]
+        streets = [s for s in self.model.streets if s.source == car.destinationId]
 
         return streets[self.generator.getNextFactor(len(streets) - 1)]
 
     def _isGreenFor(self, car):
         for crossing in self.model.crossings:
-            if crossing.nodeId == car.destinantionId and crossing.green and crossing.connectingNodes.count(car.streetId):
+            if crossing.nodeId == car.destinationId and crossing.green and crossing.connectingNodes.count(car.streetId):
                 return True
 
         return False

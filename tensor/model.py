@@ -8,7 +8,7 @@ class Event(object):
         self.distance = sys.float_info.max
         self.carId = 0
         self.streetId = 0
-        self.destinantionId = 0
+        self.destinationId = 0
         self.timePassed = .0
 
 """
