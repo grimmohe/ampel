@@ -34,7 +34,7 @@ class RNN(object):
         x = tf.reshape(x, [-1, self.chunk_size])
         x = tf.split(x, self.n_chunks, 0)
 
-        lstm_cell = rnn_cell.LSTMCell(self.rnn_size,state_is_tuple=True)
+        lstm_cell = rnn_cell.LSTMCell(self.rnn_size, state_is_tuple=True)
         outputs, states=rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
 
         output = tf.matmul(outputs[-1],layer['weights']) + layer['biases']
