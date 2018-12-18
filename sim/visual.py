@@ -45,7 +45,7 @@ class Visual(object):
             for index, streetId in enumerate(crossing.connectingNodes, start=1):
 
                 if not self.streets.get(streetId):
-                    
+
                     # forward
                     self.streets[streetId] = self._newInternalStreet(
                         streetDict[streetId], 
@@ -56,8 +56,8 @@ class Visual(object):
                     # backward
                     for nextHopStreetId in crossingDict[streetDict[streetId].destination].connectingNodes:
                         if nextHopStreetId == crossing.nodeId:
-                            if not self.streets.get(streetId):
-                                self.streets[streetId] = self._newInternalStreet(
+                            if not self.streets.get(nextHopStreetId):
+                                self.streets[nextHopStreetId] = self._newInternalStreet(
                                     streetDict[nextHopStreetId], 
                                     self.streets[streetId].endPosition, 
                                     startPosition
