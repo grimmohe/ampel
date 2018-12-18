@@ -27,32 +27,51 @@ class Visual(object):
 
         self.streets = {}
 
-        streetDict = {x.id: x for x in self.model.streets}
+        streetDict = {street.id: street for street in self.model.streets}
+        crossingDict = {crossing.nodeId: crossing for crossing in self.model.crossings}
 
         for crossing in self.model.crossings:
 
-            position = (0,0)
+            startPosition = (0,0)
 
             degree = 360 / len(crossing.connectingNodes)
 
             # do we already have one of the connected nodes?
             for streetId in crossing.connectingNodes:
                 if self.streets.get(streetId):
-                    position = self.streets[streetId].endPosition
+                    startPosition = self.streets[streetId].endPosition
                     break
 
             for index, streetId in enumerate(crossing.connectingNodes, start=1):
                 
                 if not self.streets.get(streetId):
                     
-                    internalStreet = _StreetLine(streetDict[streetId])
-                    internalStreet.startPosition = position
-                    internalStreet.endPosition = self._getTargetCoords(position, degree * (index), streetDict[streetId].distance)
-                    self.streets[streetId] = internalStreet
+                    # forward
+                    self.streets[streetId] = self._newInternalStreet(
+                        streetDict[streetId], 
+                        startPosition, 
+                        self._getTargetCoords(startPosition, degree * index, streetDict[streetId].distance)
+                    )
+
+                    # backward
+                    for nextHopStreetId in crossingDict[streetDict[streetId].destination].connectingNodes:
+                        if nextHopStreetId == crossing.nodeId:
+                            if not self.streets.get(streetId):
+                                self.streets[streetId] = self._newInternalStreet(
+                                    streetDict[nextHopStreetId], 
+                                    self.streets[streetId].endPosition, 
+                                    startPosition
+                                )
 
 
     def _getTargetCoords(self, source, degree, distance):
         return (source[0] + distance, source[1] + (math.tan(degree) * distance))
+
+    def _newInternalStreet(self, street, start, end):
+        internalStreet = _StreetLine(street)
+        internalStreet.startPosition = start
+        internalStreet.endPosition = end
+        return internalStreet
 
     def update(self):
         self.clock.tick(30)
