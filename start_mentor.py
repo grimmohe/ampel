@@ -1,13 +1,19 @@
-import sim.simulator
-import mentor.mentor
+from  sim.simulator import Generator, Simulator
+from  mentor.mentor import Mentor
+from sim.visual import Visual
 
-generator = sim.simulator.Generator()
+generator = Generator()
 model = generator.buildModel()
-sim = sim.simulator.Simulator(model, generator)
+sim = Simulator(model, generator)
+mentor = Mentor()
 
-mentor = mentor.mentor.Mentor()
+visual = Visual()
+visual.init(model)
 
 for _ in range(1000):
     sim.step(mentor.getAction)
+
+    if not visual.update():
+        break
 
 print(sim.error)
