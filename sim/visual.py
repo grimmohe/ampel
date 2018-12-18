@@ -1,5 +1,6 @@
 import pygame
 import math
+import sys
 from sim.model import Model, Street, Car
 
 class Visual(object):
@@ -22,6 +23,9 @@ class Visual(object):
         self.running = True
 
         self._prepareStreets()
+
+        self.printOffset, self.printFactor = self._getPrintOffset()
+        print(self.printFactor, self.printOffset)
 
     def _prepareStreets(self):
 
@@ -96,7 +100,7 @@ class Visual(object):
         self.screen.fill((0, 0, 0))
 
         for street in self.streets.values():
-            pygame.draw.line(self.screen, (255,255,255), street.startPosition, street.endPosition, 1)
+            self._printStreet(street)
 
         for car in self.model.cars:
             street = self.streets[car.streetId]
@@ -114,19 +118,55 @@ class Visual(object):
 
                 self._printOnStreet(street, 0, float(1) / street.street.distance, color)
 
+    def _printStreet(self, street):
+        start = (
+            street.startPosition[0] * self.printFactor + self.printOffset[0],
+            street.startPosition[1] * self.printFactor + self.printOffset[1]
+        )
+        end = (
+            street.endPosition[0] * self.printFactor + self.printOffset[0],
+            street.endPosition[1] * self.printFactor + self.printOffset[1]
+        )
+        pygame.draw.line(self.screen, (255,255,255), start, end, 1)
+
     def _printOnStreet(self, street, startFactor, endFactor, color):
 
             start = (
-                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * startFactor,
-                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * startFactor
+                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * startFactor * self.printFactor + self.printOffset[0],
+                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * startFactor * self.printFactor + self.printOffset[1]
             )
             end = (
-                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * endFactor,
-                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * endFactor
+                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * endFactor * self.printFactor + self.printOffset[0],
+                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * endFactor * self.printFactor + self.printOffset[1]
             )
 
             pygame.draw.line(self.screen, color, start, end, 3)
 
+    def _getPrintOffset(self):
+        minUsed = (
+            min(self.streets.values(), key=lambda s: min(s.startPosition[0], s.endPosition[0])),
+            min(self.streets.values(), key=lambda s: min(s.startPosition[1], s.endPosition[1]))
+        )
+        minUsed = (
+            min(minUsed[0].startPosition[0], minUsed[0].endPosition[0]),
+            min(minUsed[1].startPosition[1], minUsed[1].endPosition[1])
+        )
+
+        maxUsed = (
+            max(self.streets.values(), key=lambda s: max(s.startPosition[0], s.endPosition[0])),
+            max(self.streets.values(), key=lambda s: max(s.startPosition[1], s.endPosition[1]))
+        )
+        maxUsed = (
+            max(maxUsed[0].startPosition[0], maxUsed[0].endPosition[0]),
+            max(maxUsed[1].startPosition[1], maxUsed[1].endPosition[1])
+        )
+
+        factor = min(
+            self.screen.get_rect()[2] / (maxUsed[0] - minUsed[0]),
+            self.screen.get_rect()[3] / (maxUsed[1] - minUsed[1])
+        )
+
+        return (minUsed[0] * factor * -1, minUsed[1] * factor * -1 ), factor
 
 class _StreetLine(object):
 
