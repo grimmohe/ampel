@@ -1,6 +1,7 @@
 import pygame
 import math
 import sys
+import json
 from sim.model import Model, Street, Car
 
 class Visual(object):
@@ -25,7 +26,6 @@ class Visual(object):
         self._prepareStreets()
 
         self.printOffset, self.printFactor = self._getPrintOffset()
-        print(self.printFactor, self.printOffset)
 
     def _prepareStreets(self):
 
@@ -52,8 +52,8 @@ class Visual(object):
 
                     # forward
                     self.streets[streetId] = self._newInternalStreet(
-                        streetDict[streetId], 
-                        startPosition, 
+                        streetDict[streetId],
+                        startPosition,
                         self._getTargetCoords(startPosition, degree * index, streetDict[streetId].distance)
                     )
 
@@ -62,11 +62,10 @@ class Visual(object):
                         if nextHopStreetId == crossing.nodeId:
                             if not self.streets.get(nextHopStreetId):
                                 self.streets[nextHopStreetId] = self._newInternalStreet(
-                                    streetDict[nextHopStreetId], 
-                                    self.streets[streetId].endPosition, 
+                                    streetDict[nextHopStreetId],
+                                    self.streets[streetId].endPosition,
                                     startPosition
                                 )
-
 
     def _getTargetCoords(self, source, degree, distance):
         return (source[0] + distance, source[1] + (math.tan(degree) * distance))
@@ -82,13 +81,17 @@ class Visual(object):
 
         self.printNet()
 
+        self.handleEvents()
+
+    def handleEvents(self):
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
                 self.running = False
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_ESCAPE \
+                or event.key == pygame.K_c and pygame.key.get_mods() & pygame.KMOD_CTRL:
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
 
         # Inhalt von screen anzeigen.
@@ -103,15 +106,15 @@ class Visual(object):
             self._printStreet(street)
 
         for car in self.model.cars:
-            street = self.streets[car.streetId]
+            street = self.streets[car.sourceId]
             startFactor = car.distance / street.street.distance
             endFactor = (car.distance + 1) / street.street.distance
 
             self._printOnStreet(street, startFactor, endFactor, (0,0,255))
 
         for crossing in self.model.crossings:
-            for streetId in crossing.connectingNodes:
-                street = self.streets[streetId]
+            for sourceId in crossing.connectingNodes:
+                street = self.streets[sourceId]
                 color = (255, 0, 0)
                 if crossing.green:
                     color = (0, 255, 0)
@@ -131,16 +134,16 @@ class Visual(object):
 
     def _printOnStreet(self, street, startFactor, endFactor, color):
 
-            start = (
-                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * startFactor * self.printFactor + self.printOffset[0],
-                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * startFactor * self.printFactor + self.printOffset[1]
-            )
-            end = (
-                street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * endFactor * self.printFactor + self.printOffset[0],
-                street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * endFactor * self.printFactor + self.printOffset[1]
-            )
+        start = (
+            street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * startFactor * self.printFactor + self.printOffset[0],
+            street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * startFactor * self.printFactor + self.printOffset[1]
+        )
+        end = (
+            street.startPosition[0] + (street.endPosition[0] - street.startPosition[0]) * endFactor * self.printFactor + self.printOffset[0],
+            street.startPosition[1] + (street.endPosition[1] - street.startPosition[1]) * endFactor * self.printFactor + self.printOffset[1]
+        )
 
-            pygame.draw.line(self.screen, color, start, end, 3)
+        pygame.draw.line(self.screen, color, start, end, 3)
 
     def _getPrintOffset(self):
         minUsed = (

@@ -16,8 +16,8 @@ class Model(object):
 class Street(object):
     def __init__(self, id, source, dest, dist):
         self.id = id
-        self.source = source
-        self.destination = dest
+        self.sourceId = source
+        self.destinationId = dest
         self.distance = dist
 
     def __str__(self):
@@ -26,9 +26,9 @@ class Street(object):
 """
 """
 class Car(object):
-    def __init__(self, id, streetId, destinationId, distance):
+    def __init__(self, id, sourceId, destinationId, distance):
         self.id = id
-        self.streetId = streetId
+        self.sourceId = sourceId
         self.destinationId = destinationId
         self.distance = distance
 

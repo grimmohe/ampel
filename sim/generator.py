@@ -38,15 +38,15 @@ class Generator:
 
     def _buidlCrossings(self, model=Model(), numNodes=0):
         for nodeId in range(numNodes):
-            destinations = [s.destination for s in model.streets if s.source == nodeId]
+            destinations = [s.destinationId for s in model.streets if s.sourceId == nodeId]
             distances = []
 
             for destination1 in destinations:
-                max = {'source': destination1, 'destination': 0, 'distance': 0}
+                max = {'sourceId': destination1, 'destinationId': 0, 'distance': 0}
                 for destination2 in [d for d in destinations if d != destination1]:
                     d = self._getDistance(model, destination1, destination2, nodeId)
                     if d > max['distance']:
-                        max['destination'] = destination2
+                        max['destinationId'] = destination2
                         max['distance'] = d
 
                 distances.append(max)
@@ -54,8 +54,8 @@ class Generator:
             distances.sort(key=lambda x: x['distance'], reverse=True)
 
             crossing1 = Crossing(nodeId)
-            crossing1.connectingNodes.append(distances[0]['source'])
-            crossing1.connectingNodes.append(distances[0]['destination'])
+            crossing1.connectingNodes.append(distances[0]['sourceId'])
+            crossing1.connectingNodes.append(distances[0]['destinationId'])
 
             leaving = [d for d in destinations if crossing1.connectingNodes.count(d) == 0]
 
@@ -77,7 +77,7 @@ class Generator:
                 Car(
                     carId,
                     destination.id,
-                    destination.destination,
+                    destination.destinationId,
                     self.getNextFactor(destination.distance) + carId / 10000.0
                 )
             )
@@ -105,12 +105,12 @@ class Generator:
 
     def __travel(self, model, routes, current):
         route = routes[current]
-        streets = [s for s in model.streets if s.source == current and route.count(s.destination) == 0]
+        streets = [s for s in model.streets if s.sourceId == current and route.count(s.destinationId) == 0]
 
         for street in streets:
-            if street.destination not in routes or len(routes[street.destination]) > len(route) + 1:
+            if street.destinationId not in routes or len(routes[street.destinationId]) > len(route) + 1:
                 newRoute = route[:]
-                newRoute.append(street.destination)
-                routes[street.destination] = newRoute
-                self.__travel(model, routes, street.destination)
+                newRoute.append(street.destinationId)
+                routes[street.destinationId] = newRoute
+                self.__travel(model, routes, street.destinationId)
 

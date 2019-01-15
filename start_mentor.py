@@ -10,10 +10,16 @@ mentor = Mentor()
 visual = Visual()
 visual.init(model)
 
-for _ in range(1000):
+with open('1.json', 'w') as outfile:
+        outfile.write(str(model))
+
+for _ in range(10):
     sim.step(mentor.getAction)
 
     if not visual.update():
         break
+
+with open('2.json', 'w') as outfile:
+        outfile.write(str(model))
 
 print(sim.error)
