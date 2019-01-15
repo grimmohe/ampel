@@ -15,7 +15,7 @@ class Model(object):
 """
 class Street(object):
     def __init__(self, id, source, dest, dist):
-        self.id = id
+        self.streetId = id
         self.sourceId = source
         self.destinationId = dest
         self.distance = dist
@@ -27,7 +27,7 @@ class Street(object):
 """
 class Car(object):
     def __init__(self, id, sourceId, destinationId, distance):
-        self.id = id
+        self.carId = id
         self.sourceId = sourceId
         self.destinationId = destinationId
         self.distance = distance

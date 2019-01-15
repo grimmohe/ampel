@@ -22,7 +22,7 @@ class Generator:
         targeted = []
         streetId = 0
 
-        for nodeId in range(numNodes):
+        for nodeId in range(numNodes): #TODO Einbahnstraßen ausbauen
             connected = [nodeId]
             for _ in range(self.getNextFactor(1)+3):
                 time = minTravelTime + self.getNextFactor(maxTravelTime - minTravelTime)
@@ -68,17 +68,17 @@ class Generator:
     def _buildCars(self, model=Model(), numNodes=0, numCars=0):
 
         for carId in range(numCars):
-            streetId = self.getNextFactor(numNodes - 1)
+            nodeId = self.getNextFactor(numNodes - 1)
 
-            possibleDestinations = [s for s in model.streets if s.id == streetId]
-            destination = possibleDestinations[self.getNextFactor(len(possibleDestinations) - 1)]
+            streets = [s for s in model.streets if s.sourceId == nodeId]
+            street = streets[self.getNextFactor(len(streets) - 1)]
 
             model.cars.append(
                 Car(
                     carId,
-                    destination.id,
-                    destination.destinationId,
-                    self.getNextFactor(destination.distance) + carId / 10000.0
+                    street.sourceId,
+                    street.destinationId,
+                    self.getNextFactor(street.distance) + carId / 10000.0
                 )
             )
 

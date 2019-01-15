@@ -8,13 +8,26 @@ from tensor.model import Action, Event
 """
 class Simulator(object):
 
-    def __init__(self, model = Model(), generator = Generator()):
+    def __init__(self, model = Model(), generator = Generator(), stepSize=0.1):
         self.model = model
         self.generator = generator
-        self.time = time.time()
         self.error = .0
-        self.skipStep = float(1)
+        self.stepSize = stepSize
         self.events = []
+
+    """
+    Erzeugt für alle Fahrzeuge ein initiales Event.
+    """
+    def init(self):
+        for car in self.model.cars:
+            e = Event()
+            e.carId = car.carId
+            e.sourceId = car.sourceId
+            e.destinationId = car.destinationId
+            e.distance = car.distance
+            e.timePassed = 0
+
+            self.events.append(e)
 
     """
     1. Signal vom Verkehrsnetz
@@ -29,24 +42,32 @@ class Simulator(object):
         event = self._getNextEvent()
         action = callbackMethod(event)
 
+
         self._applyAction(action)
 
     def _getNextEvent(self):
+        timePassed = float(0)
          # first check event stack
         if len(self.events) == 0:
             # time passes to next event
-            self._moveCars(self._getNextEventDistance())
+            timePassed = self._getNextEventDistance()
+
+        timePassed += 0.001
+        self._moveCars(timePassed) # adds events
 
         if len(self.events):
             event = self.events.pop(0)
         else:
             event = Event()
-            event.timePassed = self.skipStep
+
+        event.timePassed = timePassed
+
+        print("sim: send event", event.sourceId, event.destinationId, event.distance, event.timePassed)
 
         return event
 
     def _getNextEventDistance(self):
-        next = self.skipStep
+        next = sys.float_info.max
         trigger_car = None
 
         for car in self.model.cars:
@@ -54,19 +75,13 @@ class Simulator(object):
                 next = car.distance
                 trigger_car = car
 
-        print("sim: trigger car", next, car.sourceId, car.destinationId)
+        print("sim: trigger car", car.sourceId, car.destinationId, next)
 
-        return max(0.001, next)
+        return max(0.001, min(self.stepSize, next))
 
     def _moveCars(self, distance=.0):
         if distance == 0:
             return
-
-        # update event time
-        for event in self.events:
-            event.timePassed += distance
-
-        self.time += distance
 
         # closer to event first
         self.model.cars.sort(key=lambda x: x.distance)
@@ -82,27 +97,30 @@ class Simulator(object):
 
             # arrive at crossing
             if moveTo <= 0:
-                e = Event()
-                e.carId = car.id
-                e.timePassed = distance
-                self.events.append(e)
 
                 if self._isGreenFor(car):
                     newStreet = self.getNextDestination(car)
-                    e.sourceId = newStreet.sourceId
-                    e.destinationId = newStreet.destinationId
-                    e.distance = newStreet.distance + moveTo
+
+                    car.sourceId = newStreet.sourceId
+                    car.destinationId = newStreet.destinationId
+                    car.distance = newStreet.distance + moveTo
 
                 # wait for red lights
                 else:
-                    e.sourceId = car.sourceId
-                    e.destinationId = car.destinationId
-                    e.distance = 0
-
+                    car.distance = 0
                     self.error += 1
+
+                e = Event()
+                e.carId = car.carId
+                e.sourceId = car.sourceId
+                e.destinationId = car.destinationId
+                e.distance = car.distance
+
+                self.events.append(e)
 
             else:
                 car.distance = moveTo
+
 
     def getNextDestination(self, car):
         streets = [s for s in self.model.streets if s.sourceId == car.destinationId]
@@ -121,3 +139,4 @@ class Simulator(object):
 
         for crossing in crossings:
             crossing.green = (crossing.connectingNodes.count(action.sourceId) == 1)
+            print("sim: green for", crossing.green, crossing.nodeId, crossing.connectingNodes)
