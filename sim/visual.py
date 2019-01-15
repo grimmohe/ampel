@@ -3,6 +3,9 @@ import math
 import sys
 import json
 from sim.model import Model, Street, Car
+import json
+import random
+from matplotlib import colors as mcolors
 
 class Visual(object):
 
@@ -10,8 +13,14 @@ class Visual(object):
         self.model = Model()
         self.width = 800
         self.height = 600
+        self.colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+
+    def __str__(self):
+        #return self.__dict__
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def init(self, model):
+        print(mcolors.BASE_COLORS)
         self.model = model
 
         pygame.init()
@@ -31,49 +40,78 @@ class Visual(object):
 
         self.streets = {}
 
-        streetDict = {street.id: street for street in self.model.streets}
-        crossingDict = {crossing.nodeId: crossing for crossing in self.model.crossings}
-
+        self.streetDict = {street.id: street for street in self.model.streets}
+        
+        # build cossing dict with nodeId as index
+        crossingDict = {}
         for crossing in self.model.crossings:
+            if not crossingDict.get(crossing.nodeId):
+                crossingDict[crossing.nodeId] = []
 
-            startPosition = (0,0)
+            crossingDict[crossing.nodeId].append(crossing)            
 
-            degree = 360 / len(crossing.connectingNodes)
 
-            # do we already have one of the connected nodes?
-            for streetId in crossing.connectingNodes:
-                if self.streets.get(streetId):
-                    startPosition = self.streets[streetId].endPosition
-                    break
+        #crossingDict = {crossing.nodeId: crossing for crossing in self.model.crossings}
 
-            for index, streetId in enumerate(crossing.connectingNodes, start=1):
+        for nodeId, crossings in crossingDict.items():
+            
+            degree = 360 / len(crossings)
 
-                if not self.streets.get(streetId):
+            for index, crossing in enumerate(crossings):
 
-                    # forward
-                    self.streets[streetId] = self._newInternalStreet(
-                        streetDict[streetId],
-                        startPosition,
-                        self._getTargetCoords(startPosition, degree * index, streetDict[streetId].distance)
-                    )
+                print(json.dumps(crossing, default=lambda o: o.__dict__, sort_keys=True, indent=4))
 
-                    # backward
-                    for nextHopStreetId in crossingDict[streetDict[streetId].destination].connectingNodes:
-                        if nextHopStreetId == crossing.nodeId:
-                            if not self.streets.get(nextHopStreetId):
-                                self.streets[nextHopStreetId] = self._newInternalStreet(
-                                    streetDict[nextHopStreetId],
-                                    self.streets[streetId].endPosition,
-                                    startPosition
-                                )
+                for crossingId in crossing.connectingNodes:
+
+                    startPosition = (int(nodeId) * 50, int(nodeId) * 50)
+                    streetId = self._getStreetId(crossing.nodeId, crossingId)
+
+                    try:
+                        viceVersaStreetId = self._getStreetId(crossingId, crossing.nodeId)
+
+                        if self.streets.get(viceVersaStreetId):
+                            startPosition = self.streets.get(viceVersaStreetId).endPosition
+                    except:
+                        pass
+
+                    if not self.streets.get(streetId):
+
+                        # forward
+                        self.streets[streetId] = self._newInternalStreet(
+                            self.streetDict[streetId],
+                            startPosition,
+                            self._getTargetCoords(startPosition, degree * index, self.streetDict[streetId].distance),
+                            list(self.colors.keys())[streetId]
+                        )
+
+                        # backward
+                        #for nextHopStreetId in crossingDict[streetDict[streetId].destinationId].connectingNodes:
+                        #    if nextHopStreetId == crossing.nodeId:
+                        #        if not self.streets.get(nextHopStreetId):
+                        #            self.streets[nextHopStreetId] = self._newInternalStreet(
+                        #                streetDict[nextHopStreetId],
+                        #                self.streets[streetId].endPosition,
+                        #                startPosition,
+                        #                list(self.colors.keys())[streetId]
+                        #            )
+
+    def _getStreetId(self, sourceId, destinationId):
+
+        for streetId, street in self.streetDict.items():
+            if street.sourceId == sourceId and street.destinationId == destinationId:
+                return street.id
+            
+        raise Exception("no street found for sourceId: " + str(sourceId) + " destinationId: " + str(destinationId)) 
 
     def _getTargetCoords(self, source, degree, distance):
+        print("source[0]: " + str(source[0]) + ", source[1]: " + str(source[1]) + ", distance: " + str(distance) + ", degree: " + str(degree))
         return (source[0] + distance, source[1] + (math.tan(degree) * distance))
 
-    def _newInternalStreet(self, street, start, end):
+    def _newInternalStreet(self, street, start, end, color):
         internalStreet = _StreetLine(street)
         internalStreet.startPosition = start
         internalStreet.endPosition = end
+        internalStreet.color = color
         return internalStreet
 
     def update(self):
@@ -106,7 +144,7 @@ class Visual(object):
             self._printStreet(street)
 
         for car in self.model.cars:
-            street = self.streets[car.sourceId]
+            street = self.streets[self._getStreetId(car.sourceId, car.destinationId)]
             startFactor = car.distance / street.street.distance
             endFactor = (car.distance + 1) / street.street.distance
 
@@ -130,7 +168,8 @@ class Visual(object):
             street.endPosition[0] * self.printFactor + self.printOffset[0],
             street.endPosition[1] * self.printFactor + self.printOffset[1]
         )
-        pygame.draw.line(self.screen, (255,255,255), start, end, 1)
+        color = mcolors.to_rgba(self.colors[street.color])[:3]
+        pygame.draw.line(self.screen, (color[0]*255, color[1]*255, color[2]*255), start, end, 1)
 
     def _printOnStreet(self, street, startFactor, endFactor, color):
 
@@ -177,3 +216,6 @@ class _StreetLine(object):
         self.street = street
         self.startPosition = (.0, .0)
         self.endPosition = (.0, .0)
+
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
