@@ -22,8 +22,8 @@ class Simulator(object):
         for car in self.model.cars:
             e = Event()
             e.carId = car.carId
-            e.sourceId = car.sourceId
-            e.destinationId = car.destinationId
+            e.sourceId = car.sourceCrossing.crossingId
+            e.destinationId = car.destinationCrossing.crossingId
             e.distance = car.distance
             e.timePassed = 0
 
@@ -75,7 +75,12 @@ class Simulator(object):
                 next = car.distance
                 trigger_car = car
 
-        print("sim: trigger car", car.sourceId, car.destinationId, next)
+        print(
+            "sim: trigger car",
+            car.sourceCrossing.crossingId,
+            car.destinationCrossing.crossingId,
+            next
+        )
 
         return max(0.001, min(self.stepSize, next))
 
@@ -90,7 +95,11 @@ class Simulator(object):
             moveTo = car.distance - distance
 
             # dont drive over other cars
-            frontCars = [c for c in self.model.cars if c.sourceId == car.sourceId and c.destinationId == car.destinationId and c != car]
+            frontCars = [c for c in self.model.cars
+                            if c.sourceCrossing == car.sourceCrossing
+                            and c.destinationCrossing == car.destinationCrossing
+                            and c != car
+                        ]
             for frontCar in frontCars:
                 if frontCar.distance < car.distance and frontCar.distance + 1 > car.distance:
                     moveTo = frontCar.distance + 1
@@ -99,11 +108,11 @@ class Simulator(object):
             if moveTo <= 0:
 
                 if self._isGreenFor(car):
-                    newStreet = self.getNextDestination(car)
+                    newDestinationCrossing, newDistance = self.getNextDestination(car)
 
-                    car.sourceId = newStreet.sourceId
-                    car.destinationId = newStreet.destinationId
-                    car.distance = newStreet.distance + moveTo
+                    car.sourceCrossing = car.destinationCrossing
+                    car.destinationCrossing = newDestinationCrossing
+                    car.distance = newDistance + moveTo
 
                 # wait for red lights
                 else:
@@ -112,8 +121,8 @@ class Simulator(object):
 
                 e = Event()
                 e.carId = car.carId
-                e.sourceId = car.sourceId
-                e.destinationId = car.destinationId
+                e.sourceId = car.sourceCrossing.crossingId
+                e.destinationId = car.destinationCrossing.crossingId
                 e.distance = car.distance
 
                 self.events.append(e)
@@ -123,20 +132,27 @@ class Simulator(object):
 
 
     def getNextDestination(self, car):
-        streets = [s for s in self.model.streets if s.sourceId == car.destinationId]
+        destinations = car.destinationCrossing.connectingCrossings + car.destinationCrossing.otherCrossing.connectingCrossings
+        destinationCrossing = destinations[self.generator.getNextFactor(len(destinations) - 1)]
 
-        return streets[self.generator.getNextFactor(len(streets) - 1)]
+        for street in self.model.streets:
+            if street.crossings.count(car.destinationCrossing) > 0 \
+            and street.crossings.count(destinationCrossing) > 0:
+                return (destinationCrossing, street.distance)
+
+        print("no street to connected crossing found (%s, %s)" % (car.destinationCrossing.crossingId, destinationCrossing.crossingId))
+        raise "wtf"
 
     def _isGreenFor(self, car):
-        for crossing in self.model.crossings:
-            if crossing.nodeId == car.destinationId and crossing.green and crossing.connectingNodes.count(car.sourceId):
-                return True
-
-        return False
+        return car.destinationCrossing.green
 
     def _applyAction(self, action=Action()):
-        crossings = [c for c in self.model.crossings if c.nodeId == action.destinationId]
+        crossings = [c for c in self.model.crossings if c.crossingId == action.destinationId]
 
         for crossing in crossings:
-            crossing.green = (crossing.connectingNodes.count(action.sourceId) == 1)
-            print("sim: green for", crossing.green, crossing.nodeId, crossing.connectingNodes)
+            green = False
+            for connectedCrossing in crossing.connectingCrossings:
+                if connectedCrossing.crossingId == action.sourceId:
+                    green = True
+            crossing.green = green
+            print("sim: green for", crossing.green, crossing.crossingId, crossing.connectingCrossings)
