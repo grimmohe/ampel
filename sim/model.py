@@ -9,7 +9,14 @@ class Model(object):
         self.crossings = []
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__, indent=4)
+        return json.dumps(self, default=lambda o: o.to_json(), indent=4)
+
+    def to_json(self):
+        return {
+            'streets': self.streets,
+            'cars': self.cars,
+            'crossings': self.crossings
+        }
 
 """
 """
@@ -20,7 +27,14 @@ class Street(object):
         self.distance = dist
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.to_json(), indent=4)
+
+    def to_json(self):
+        return {
+            'streetId': self.streetId,
+            'crossings': [c.crossingId for c in self.crossings],
+            'distance': self.distance
+        }
 
 """
 """
@@ -32,7 +46,15 @@ class Car(object):
         self.distance = distance
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self, default=lambda o: o.to_json(), indent=4)
+
+    def to_json(self):
+        return {
+            'carId': self.carId,
+            'sourceCrossing': self.sourceCrossing.crossingId,
+            'destinationCrossing': self.destinationCrossing.crossingId,
+            'distance': self.distance
+        }
 
 """
 """
@@ -42,3 +64,14 @@ class Crossing(object):
         self.green = False
         self.otherCrossing = None
         self.connectingCrossings = []
+
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.to_json(), indent=4)
+
+    def to_json(self):
+        return {
+            'crossingId': self.crossingId,
+            'green': self.green,
+            'otherCrossing': self.otherCrossing.crossingId,
+            'connectingCrossings': [c.crossingId for c in self.connectingCrossings]
+        }
