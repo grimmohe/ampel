@@ -14,10 +14,9 @@ class Model(object):
 """
 """
 class Street(object):
-    def __init__(self, id, source, dest, dist):
+    def __init__(self, id, connectingCrossings=[], dist=.0):
         self.streetId = id
-        self.sourceId = source
-        self.destinationId = dest
+        self.crossings = connectingCrossings
         self.distance = dist
 
     def __str__(self):
@@ -26,10 +25,10 @@ class Street(object):
 """
 """
 class Car(object):
-    def __init__(self, id, sourceId, destinationId, distance):
+    def __init__(self, id, sourceCrossing, destinationCrossing, distance):
         self.carId = id
-        self.sourceId = sourceId
-        self.destinationId = destinationId
+        self.sourceCrossing = sourceCrossing
+        self.destinationCrossing = destinationCrossing
         self.distance = distance
 
     def __str__(self):
@@ -38,7 +37,8 @@ class Car(object):
 """
 """
 class Crossing(object):
-    def __init__(self, nodeId):
-        self.nodeId = nodeId
+    def __init__(self, crossingId):
+        self.crossingId = crossingId
         self.green = False
-        self.connectingNodes = []
+        self.otherCrossing = None
+        self.connectingCrossings = []
