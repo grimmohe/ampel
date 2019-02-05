@@ -136,8 +136,10 @@ class Simulator(object):
         destinationCrossing = destinations[self.generator.getNextFactor(len(destinations) - 1)]
 
         for street in self.model.streets:
-            if street.crossings.count(car.destinationCrossing) > 0 \
-            and street.crossings.count(destinationCrossing) > 0:
+            if (street.crossings[0].crossingId == car.destinationCrossing.crossingId
+                and street.crossings[1].crossingId == destinationCrossing.crossingId) \
+            or (street.crossings[1].crossingId == car.destinationCrossing.crossingId
+                and street.crossings[0].crossingId == destinationCrossing.crossingId):
                 return (destinationCrossing, street.distance)
 
         print("no street to connected crossing found (%s, %s)" % (car.destinationCrossing.crossingId, destinationCrossing.crossingId))

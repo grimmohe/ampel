@@ -32,7 +32,7 @@ class Street(object):
     def to_json(self):
         return {
             'streetId': self.streetId,
-            'crossings': [c.crossingId for c in self.crossings],
+            'crossings': [str(c.crossingId) + ":" + str([cc.crossingId for cc in c.connectingCrossings]) for c in self.crossings],
             'distance': self.distance
         }
 
