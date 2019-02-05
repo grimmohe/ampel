@@ -2,7 +2,7 @@ import pygame
 import math
 import sys
 import json
-from sim.model import Model, Street, Car
+from sim.model import Model, Street, Car, Crossing
 import json
 import random
 from matplotlib import colors as mcolors
@@ -13,6 +13,7 @@ class Visual(object):
         self.model = Model()
         self.width = 800
         self.height = 600
+        self.white = (255, 255, 255)
         self.colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
     def __str__(self):
@@ -31,30 +32,33 @@ class Visual(object):
         pygame.key.set_repeat(1, 30)
         self.clock = pygame.time.Clock()
         self.running = True
-
+        self.printFactor = 4
         self._prepareStreets()
 
-        self.printOffset, self.printFactor = self._getPrintOffset()
+        self.printOffset = self._getPrintOffset()
 
     def _prepareStreets(self):
 
-        self.streets = {}
+        self.streets = []
+        self.crossings = []
 
-        self.streetDict = {street.id: street for street in self.model.streets}
-        
-        # build cossing dict with nodeId as index
-        crossingDict = {}
-        for crossing in self.model.crossings:
-            if not crossingDict.get(crossing.nodeId):
-                crossingDict[crossing.nodeId] = []
+        crossingWheelDegree = 360 / len(self.model.crossings)
 
-            crossingDict[crossing.nodeId].append(crossing)            
+        print("crossings: " + str(len(self.model.crossings)))
+        print("crossingWheelDegree: " + str(crossingWheelDegree))
 
-
-        #crossingDict = {crossing.nodeId: crossing for crossing in self.model.crossings}
-
-        for nodeId, crossings in crossingDict.items():
+        for crossingIndex, crossing in enumerate(self.model.crossings, start = 1):
             
+            self.crossings.append(
+                self._newInternalCrossing(
+                        crossing,
+                        self._getPositionOnCircle(self.width / self.printFactor, 
+                        crossingIndex * crossingWheelDegree
+                    )
+                )
+            )
+
+            """ 
             degree = 360 / len(crossings)
 
             for index, crossing in enumerate(crossings):
@@ -94,25 +98,26 @@ class Visual(object):
                         #                startPosition,
                         #                list(self.colors.keys())[streetId]
                         #            )
+            """
 
-    def _getStreetId(self, sourceId, destinationId):
-
-        for streetId, street in self.streetDict.items():
-            if street.sourceId == sourceId and street.destinationId == destinationId:
-                return street.id
-            
-        raise Exception("no street found for sourceId: " + str(sourceId) + " destinationId: " + str(destinationId)) 
-
-    def _getTargetCoords(self, source, degree, distance):
-        print("source[0]: " + str(source[0]) + ", source[1]: " + str(source[1]) + ", distance: " + str(distance) + ", degree: " + str(degree))
-        return (source[0] + distance, source[1] + (math.tan(degree) * distance))
+    def _getPositionOnCircle(self, radius, angle):
+        return (
+            radius * math.cos(angle), 
+            radius * math.sin(angle)
+        )
 
     def _newInternalStreet(self, street, start, end, color):
-        internalStreet = _StreetLine(street)
-        internalStreet.startPosition = start
-        internalStreet.endPosition = end
-        internalStreet.color = color
-        return internalStreet
+        o = _StreetLine(street)
+        o.startPosition = start
+        o.endPosition = end
+        o.color = color
+        return o
+
+    def _newInternalCrossing(self, crossing, position):
+        o = _CrossingBox(crossing)
+        o.position = position
+        print("created crossing on position: " + str(position))
+        return o
 
     def update(self):
         self.clock.tick(30)
@@ -140,6 +145,10 @@ class Visual(object):
     def printNet(self):
         self.screen.fill((0, 0, 0))
 
+        for crossing in self.crossings:
+            self._printCrossing(crossing)
+
+        """
         for street in self.streets.values():
             self._printStreet(street)
 
@@ -158,6 +167,19 @@ class Visual(object):
                     color = (0, 255, 0)
 
                 self._printOnStreet(street, 0, float(1) / street.street.distance, color)
+        """
+
+    def _printCrossing(self, crossing):
+
+        pygame.draw.rect(
+            self.screen, 
+            self.white, 
+            pygame.Rect(
+                crossing.position[0] + self.printOffset[0], 
+                crossing.position[1] + self.printOffset[1], 
+                5, 
+                5), 
+            2)
 
     def _printStreet(self, street):
         start = (
@@ -186,21 +208,22 @@ class Visual(object):
 
     def _getPrintOffset(self):
         minUsed = (
-            min(self.streets.values(), key=lambda s: min(s.startPosition[0], s.endPosition[0])),
-            min(self.streets.values(), key=lambda s: min(s.startPosition[1], s.endPosition[1]))
+            min(self.crossings, key=lambda s: s.position[0]),
+            min(self.crossings, key=lambda s: s.position[1])
         )
+
         minUsed = (
-            min(minUsed[0].startPosition[0], minUsed[0].endPosition[0]),
-            min(minUsed[1].startPosition[1], minUsed[1].endPosition[1])
+            minUsed[0].position[0],
+            minUsed[1].position[1]
         )
 
         maxUsed = (
-            max(self.streets.values(), key=lambda s: max(s.startPosition[0], s.endPosition[0])),
-            max(self.streets.values(), key=lambda s: max(s.startPosition[1], s.endPosition[1]))
+            max(self.crossings, key=lambda s: s.position[0]),
+            max(self.crossings, key=lambda s: s.position[1])
         )
         maxUsed = (
-            max(maxUsed[0].startPosition[0], maxUsed[0].endPosition[0]),
-            max(maxUsed[1].startPosition[1], maxUsed[1].endPosition[1])
+            maxUsed[0].position[0],
+            maxUsed[1].position[1]
         )
 
         factor = min(
@@ -208,7 +231,7 @@ class Visual(object):
             self.screen.get_rect()[3] / (maxUsed[1] - minUsed[1])
         )
 
-        return (minUsed[0] * factor * -1, minUsed[1] * factor * -1 ), factor
+        return (minUsed[0] * factor * -1, minUsed[1] * factor * -1 )
 
 class _StreetLine(object):
 
@@ -219,3 +242,14 @@ class _StreetLine(object):
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+class _CrossingBox(object):
+
+    def __init__(self, crossing=Crossing):
+        self.crossing = crossing
+        self.position = (.0, .0)
+
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+
